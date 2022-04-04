@@ -127,3 +127,12 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+
+# User setting
+.vscode/**
+
+
+# Node packages
+.node
+node_modules/
