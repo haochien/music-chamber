@@ -1,3 +1,9 @@
 from django.shortcuts import render
+from rest_framework import generics
+from .serializers import ChamberSerializer
+from .models import Chamber
 
-# Create your views here.
+
+class ChamberView(generics.ListAPIView):
+    queryset = Chamber.objects.all()
+    serializer_class = ChamberSerializer
