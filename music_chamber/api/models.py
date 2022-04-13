@@ -4,8 +4,8 @@ import uuid
 
 class Chamber(models.Model):
     #TODO: create FK to User or Profile model 
-    room_id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
-    room_name = models.CharField(max_length=50)
+    chamber_id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
+    chamber_name = models.CharField(max_length=50)
     host_name = models.CharField(max_length=50, unique=True)
     access_guest_can_pause = models.BooleanField(default=True)
     votes_song_skip = models.IntegerField(default=1)
@@ -15,6 +15,6 @@ class Chamber(models.Model):
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
-        return str(self.room_name)
+        return str(self.chamber_name)
 
 

@@ -28,7 +28,7 @@ class CreateChamberView(APIView):
         serializer = self.serializer_class(data=request.data)
         
         if serializer.is_valid():
-            room_name = serializer.data.get('room_name')
+            chamber_name = serializer.data.get('chamber_name')
             access_guest_can_pause = serializer.data.get('access_guest_can_pause')
             votes_song_skip = serializer.data.get('votes_song_skip')
             is_public = serializer.data.get('is_public')
@@ -36,8 +36,8 @@ class CreateChamberView(APIView):
 
             queryset_filter = Q(host_name=host_name) & Q(is_active=True)
             queryset = Chamber.objects.filter(queryset_filter)
-            list_model_fields = ['room_name', 'access_guest_can_pause', 'votes_song_skip', 'is_public', 'host_name']
-            list_model_values = [room_name, access_guest_can_pause, votes_song_skip, is_public, host_name]
+            list_model_fields = ['chamber_name', 'access_guest_can_pause', 'votes_song_skip', 'is_public', 'host_name']
+            list_model_values = [chamber_name, access_guest_can_pause, votes_song_skip, is_public, host_name]
 
             if queryset.exists():
                 WorkWithModel.create_or_update_model(Chamber, list_model_fields, list_model_values, 'update', queryset)
@@ -47,4 +47,4 @@ class CreateChamberView(APIView):
                 instance = WorkWithModel.create_or_update_model(Chamber, list_model_fields, list_model_values, 'create')
                 return Response(ChamberSerializer(instance).data, status=status.HTTP_201_CREATED)
         
-        return Response({'Bad Request': 'Invalid Input'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'Bad Request': 'Invalid Input. Details: ' + str(serializer.errors) }, status=status.HTTP_400_BAD_REQUEST)
