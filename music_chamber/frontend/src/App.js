@@ -4,6 +4,7 @@ import { createTheme, ThemeProvider } from '@mui/material/styles';
 // page components
 import Home from './pages/home/Home'
 import CreateChamber from './pages/create_chamber/CreateChamber'
+import Chamber from './pages/chamber/Chamber'
 
 // styles
 import './App.css';
@@ -46,6 +47,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />}/>
           <Route path="/create-chamber" element={<CreateChamber />}/>
+          <Route path="/chamber/:id" element={<Chamber />}/>
         </Routes>
       </BrowserRouter>
     </div>

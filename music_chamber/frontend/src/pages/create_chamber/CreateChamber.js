@@ -12,6 +12,7 @@ import Box from '@mui/material/Box';
 import MusicNote from '@mui/icons-material/MusicNote';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
+import { useNavigate } from 'react-router-dom';
 
 
 
@@ -20,6 +21,8 @@ export default function CreateChamber() {
   const [accessGuestCanPause, setAccessGuestCanPause] = useState(false);
   const [accessGuestCanAdd, setAccessGuestCanAdd] = useState(false);
   const [isPublic, setIsPublic] = useState(true);
+
+  const navigate = useNavigate()
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -45,7 +48,7 @@ export default function CreateChamber() {
 
     fetch("/api/create-chamber", requestOption)
       .then((response) => response.json())
-      .then((data) => console.log(data))
+      .then((data) => navigate('/chamber/' + data.chamber_id))
 
   };
 
