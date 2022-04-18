@@ -7,7 +7,7 @@ import './Chamber.css'
 export default function Chamber() {
 
 	const { id } = useParams()
-	const [url, setUrl] = useState('/api/get-chamber' + '?id=' + id)
+	const [url, setUrl] = useState('/api/get-chamber?id=' + id)
 	const [objChamberInfo, setObjChamberInfo] = useState('')
 
 	useEffect(() => {
