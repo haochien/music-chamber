@@ -48,3 +48,29 @@ class CreateChamberView(APIView):
                 return Response(ChamberSerializer(instance).data, status=status.HTTP_201_CREATED)
         
         return Response({'Bad Request': 'Invalid Input. Details: ' + str(serializer.errors) }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class GetChamberView(APIView):
+    serializer_class = ChamberSerializer
+    url_search_kwarg = 'id'
+    
+    def get(self, request):
+        if not self.request.session.exists(self.request.session.session_key):
+            self.request.session.create()
+
+        chamber_id = request.GET.get(self.url_search_kwarg)
+        if chamber_id is not None:
+            queryset = Chamber.objects.filter(chamber_id=chamber_id)
+            if queryset.exists():
+                self.request.session['chamber_id'] = chamber_id
+                
+                serializer_data = ChamberSerializer(queryset[0]).data
+                serializer_data['is_host'] = queryset[0].host_name == self.request.session.session_key
+                return Response(serializer_data, status=status.HTTP_200_OK)
+            return Response({'Bad Request': 'Invalud Chamber ID'}, status=status.HTTP_400_BAD_REQUEST)#HTTP_404_NOT_FOUND
+        return Response({'Bad Request': "No searching parameter 'id' in the request"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+        

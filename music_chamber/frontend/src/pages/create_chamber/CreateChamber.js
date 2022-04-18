@@ -1,17 +1,9 @@
 import {useState} from 'react';
-import Avatar from '@mui/material/Avatar';
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import FormControl from '@mui/material/FormControl';
-import FormGroup from '@mui/material/FormGroup';
-import FormLabel from '@mui/material/FormLabel';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Switch from '@mui/material/Switch';
-import Grid from '@mui/material/Grid';
-import Box from '@mui/material/Box';
+import { Avatar, Button, TextField, FormControl,
+  FormGroup, FormLabel, FormControlLabel, Switch,
+  Grid, Box, Typography, Container } from '@mui/material'
 import MusicNote from '@mui/icons-material/MusicNote';
-import Typography from '@mui/material/Typography';
-import Container from '@mui/material/Container';
+import { useNavigate } from 'react-router-dom';
 
 
 
@@ -20,6 +12,8 @@ export default function CreateChamber() {
   const [accessGuestCanPause, setAccessGuestCanPause] = useState(false);
   const [accessGuestCanAdd, setAccessGuestCanAdd] = useState(false);
   const [isPublic, setIsPublic] = useState(true);
+
+  const navigate = useNavigate()
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -45,7 +39,7 @@ export default function CreateChamber() {
 
     fetch("/api/create-chamber", requestOption)
       .then((response) => response.json())
-      .then((data) => console.log(data))
+      .then((data) => navigate('/chamber/' + data.chamber_id))
 
   };
 
@@ -59,11 +53,11 @@ export default function CreateChamber() {
           alignItems: 'center',
           border: '1px solid white',
           borderRadius: '25px',
-          bgcolor: 'primary.light',
+          bgcolor: 'secondary.main',
           padding: 4,
         }}
       >
-        <Avatar sx={{ m: 1, bgcolor: 'secondary.main', color: 'secondary.contrastText'}}>
+        <Avatar sx={{ m: 1, bgcolor: 'primary.main', color: 'secondary.main'}}>
           <MusicNote />
         </Avatar>
 
@@ -146,7 +140,7 @@ export default function CreateChamber() {
                 type="submit"
                 fullWidth
                 variant="contained"
-                sx={{ mt: 3, mb: 2, bgcolor:'secondary.main', '&:hover': {bgcolor:'secondary.dark'} }}
+                sx={{ mt: 3, mb: 2, bgcolor:'primary.main', '&:hover': {bgcolor:'primary.dark'} }}
               >
                 Create
               </Button>
@@ -157,7 +151,7 @@ export default function CreateChamber() {
                 type="submit"
                 fullWidth
                 variant="contained"
-                sx={{ mt: 3, mb: 2, bgcolor:'secondary.main', '&:hover': {bgcolor:'secondary.dark'} }}
+                sx={{ mt: 3, mb: 2, bgcolor:'primary.main', '&:hover': {bgcolor:'primary.dark'} }}
               >
                 Leave
               </Button>
