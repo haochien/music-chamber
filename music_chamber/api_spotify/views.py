@@ -24,10 +24,10 @@ class GetAuthURL(APIView):
 
         #TODO: add state into request
         auth_url = Request('GET', 'https://accounts.spotify.com/authorize', params={
-            'client_id': env.str('CLIENT_ID'),
+            'client_id': env.str('SPOTIFY_CLIENT_ID'),
             'response_type': 'code',
             'scope': scopes, 
-            'redirect_uri': env.str('REDIRECT_URL')      
+            'redirect_uri': env.str('SPOTIFY_REDIRECT_URL')   
         }).prepare().url
 
 
@@ -41,10 +41,10 @@ def get_auth_callback(request):
 
     response = post('https://accounts.spotify.com/api/token', data={
         'code': code,
-        'redirect_uri': env.str('REDIRECT_URL'),
+        'redirect_uri': env.str('SPOTIFY_REDIRECT_URL'),
         'grant_type': 'authorization_code',
-        'client_id': env.str('CLIENT_ID'),
-        'client_secret': env.str('CLIENT_SECRET')
+        'client_id': env.str('SPOTIFY_CLIENT_ID'),
+        'client_secret': env.str('SPOTIFY_CLIENT_SECRET')
     }).json()
 
     access_token = response.get('access_token')
@@ -63,5 +63,10 @@ def get_auth_callback(request):
         request.session.create()
     
     create_or_update_user_token(request.session.session_key, refresh_token, access_token, expires_in, token_type)
-    return redirect('/')
+    
+    if 'chamber_id' in request.session:
+        chamber_id = request.session['chamber_id']
+        return redirect(f'/chamber/{chamber_id}')
+    else:
+        return redirect('/')
 

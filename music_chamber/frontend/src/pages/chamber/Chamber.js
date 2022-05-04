@@ -10,11 +10,34 @@ export default function Chamber() {
 	const [url, setUrl] = useState('/api/get-chamber?id=' + id)
 	const [objChamberInfo, setObjChamberInfo] = useState('')
 
+  const [userAuthStatus, setUserAuthStatus] = useState(false)
+
+  const loginSpotify = () => {
+    fetch("/api-spotify/check-user-auth")
+      .then((response) => response.json())
+      .then((data) => {
+        setUserAuthStatus(data.is_auth)
+
+        if (!data.is_auth) {
+          fetch("/api-spotify/get-auth-url")
+            .then(response => response.json())
+            .then((data) => {
+              window.location.replace(data.auth_url)
+            })
+        }
+      })
+  }
+
+
 	useEffect(() => {
 		fetch(url)
       .then((response) => response.json())
       .then((data) => setObjChamberInfo(data))
-	}, [url])
+    
+      loginSpotify()
+	}, [])
+
+  useEffect(() => console.log(userAuthStatus), [userAuthStatus]);
 
 
   return (

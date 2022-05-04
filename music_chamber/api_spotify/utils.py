@@ -36,14 +36,14 @@ def refresh_user_token(user_session):
     response = post('https://accounts.spotify.com/api/token', data={
         'grant_type': 'refresh_token',
         'refresh_token': refresh_token,
-        'client_id': env.str('CLIENT_ID'),
-        'client_secret': env.str('CLIENT_SECRET')
+        'client_id': env.str('SPOTIFY_CLIENT_ID'),
+        'client_secret': env.str('SPOTIFY_CLIENT_SECRET')
     }).json()
 
     access_token = response.get('access_token')
     token_type = response.get('token_type')
     expires_in = response.get('expires_in')
-    refresh_token = response.get('refresh_token')
+    refresh_token = response.get('refresh_token') if response.get('refresh_token') is not None else refresh_token
 
     create_or_update_user_token(user_session, refresh_token, access_token, expires_in, token_type)
 
@@ -53,7 +53,7 @@ def is_user_authenticated(user_session):
 
     if instance_user_token is not None:
         # check whether user token needs to be refreshed
-        expire_in = instance_user_token.expire_in
+        expire_in = instance_user_token.expires_in
         if expire_in <= timezone.now():
             refresh_user_token(user_session)
         
