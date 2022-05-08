@@ -7,7 +7,7 @@ from rest_framework import status
 
 from requests import Request, post
 
-from .utils import create_or_update_user_token, is_user_authenticated
+from .utils import create_or_update_user_token, is_user_authenticated, fetch_user_token_info
 
 env = settings.ENV
 
@@ -20,7 +20,8 @@ class CheckUserAuth(APIView):
 
 class GetAuthURL(APIView):
     def get(self, request):
-        scopes = 'user-modify-playback-state user-read-playback-state user-read-currently-playing app-remote-control streaming'
+        #scopes = 'user-modify-playback-state user-read-playback-state user-read-currently-playing app-remote-control streaming'
+        scopes = 'streaming user-read-email user-read-private'
 
         #TODO: add state into request
         auth_url = Request('GET', 'https://accounts.spotify.com/authorize', params={
@@ -70,3 +71,12 @@ def get_auth_callback(request):
     else:
         return redirect('/')
 
+
+class GetUserToken(APIView):
+    def get(self, request):
+        instance_access_token = fetch_user_token_info(request.session.session_key, return_queryset=False)
+
+        if instance_access_token is not None:
+            return Response({"access_token": instance_access_token.access_token}, status=status.HTTP_200_OK)
+        else:
+            return Response({'Bad Request': "Access token for current session is not created yet"}, status=status.HTTP_400_BAD_REQUEST)

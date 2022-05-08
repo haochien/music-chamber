@@ -1,6 +1,8 @@
 import {useEffect, useState} from 'react'
 import { useParams } from 'react-router-dom'
 
+import SpotifyPlayback from '../../components/SpotifyPlayback'
+
 // styles
 import './Chamber.css'
 
@@ -11,6 +13,7 @@ export default function Chamber() {
 	const [objChamberInfo, setObjChamberInfo] = useState('')
 
   const [userAuthStatus, setUserAuthStatus] = useState(false)
+  const [accessToken, setAccessToken] = useState('')
 
   const loginSpotify = () => {
     fetch("/api-spotify/check-user-auth")
@@ -24,7 +27,15 @@ export default function Chamber() {
             .then((data) => {
               window.location.replace(data.auth_url)
             })
+        } 
+        else {
+          fetch("/api-spotify/get-access-token")
+            .then(response => response.json())
+            .then((data) => {
+              setAccessToken(data.access_token)
+          })
         }
+
       })
   }
 
@@ -37,7 +48,7 @@ export default function Chamber() {
       loginSpotify()
 	}, [])
 
-  useEffect(() => console.log(userAuthStatus), [userAuthStatus]);
+  //useEffect(() => console.log(userAuthStatus), [userAuthStatus]);
 
 
   return (
@@ -49,6 +60,7 @@ export default function Chamber() {
         <p>Chamber Created at: {objChamberInfo ? objChamberInfo.created_at : ''}</p>
         <p>Is Public Chamber: {objChamberInfo ? objChamberInfo.is_public.toString() : ''}</p>
         <p>Are You Host: {objChamberInfo ? objChamberInfo.is_host.toString() : ''}</p>
+        <SpotifyPlayback token={accessToken} />
     </div>
   )
 }
