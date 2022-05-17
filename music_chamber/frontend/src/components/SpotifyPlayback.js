@@ -19,6 +19,16 @@ export default function SpotifyPlayback(props) {
   const [is_paused, setPaused] = useState(false);
   const [is_active, setActive] = useState(false);
   const [current_track, setTrack] = useState(track);
+  const [deviceSwitchStatus, setIsDeviceSwitchStatus] = useState(false);
+  
+  const switchDevice = () => {
+    fetch("/api-spotify/transfer-device", {method: "PUT"})
+      .then((response) => {
+        setIsDeviceSwitchStatus(response)
+      })
+  }
+  useEffect(() => console.log(deviceSwitchStatus), [deviceSwitchStatus]);
+
   
   useEffect(() => {
     if (user_token) {
@@ -31,7 +41,7 @@ export default function SpotifyPlayback(props) {
       window.onSpotifyWebPlaybackSDKReady = () => {
 
           const player = new window.Spotify.Player({
-              name: 'Music Chamber',
+              name: 'Music-Chamber',
               getOAuthToken: cb => { cb(user_token); },
               volume: 0.5
           });
@@ -40,22 +50,23 @@ export default function SpotifyPlayback(props) {
 
           player.addListener('ready', ({ device_id }) => {
               console.log('Ready with Device ID', device_id);
+              switchDevice();
 
               // switch song play from any spotify client to the current chamber
-              const connect_to_device = () => {
-                console.log("Changing to device");
-                let change_device = fetch("https://api.spotify.com/v1/me/player", {
-                  method: "PUT",
-                  body: JSON.stringify({
-                    device_ids: [device_id],
-                    play: false,
-                  }),
-                  headers: new Headers({
-                    Authorization: "Bearer " + user_token,
-                  }),
-                }).then((response) => console.log(response));
-              };
-              connect_to_device();
+              // const connect_to_device = () => {
+              //   console.log("Changing to device");
+              //   let change_device = fetch("https://api.spotify.com/v1/me/player", {
+              //     method: "PUT",
+              //     body: JSON.stringify({
+              //       device_ids: [device_id],
+              //       play: false,
+              //     }),
+              //     headers: new Headers({
+              //       Authorization: "Bearer " + user_token,
+              //     }),
+              //   }).then((response) => console.log(response));
+              // };
+              // connect_to_device();
           });
 
           player.addListener('not_ready', ({ device_id }) => {
@@ -82,7 +93,10 @@ export default function SpotifyPlayback(props) {
             setTrack(state.track_window.current_track);
             setPaused(state.paused);
             player.getCurrentState().then( state => { 
-                (!state)? setActive(false) : setActive(true) 
+                (!state) ? setActive(false) : setActive(true) 
+
+                var current_track = state.track_window.current_track;
+                var next_track = state.track_window.next_tracks[0];
             });
         
         }));

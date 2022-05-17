@@ -1,13 +1,16 @@
 from datetime import timedelta
-from requests import post
+from requests import get, post, put
 
 from .models import SpotifyUserToken
 from django.utils import timezone
 from django.conf import settings
+from rest_framework import status
 
 from common.utils.work_with_model import WorkWithModel
+from common.utils import constant
 
 env = settings.ENV
+BASE_URL = "https://api.spotify.com/v1/me/"
 
 def fetch_user_token_info(user_session, return_queryset=True):
     queryset_user_token = SpotifyUserToken.objects.filter(user_session=user_session)
@@ -59,3 +62,42 @@ def is_user_authenticated(user_session):
         
         return True
     return False
+
+
+
+def spotify_web_api_operator(user_session, endpoint, post_data=False, put_data=False):
+    api_base = BASE_URL + endpoint
+    instance_user_token = fetch_user_token_info(user_session, return_queryset=False)
+    if instance_user_token is not None:
+        headers = {'Content-Type': 'application/json', 
+                   'Authorization': "Bearer " + instance_user_token.access_token}
+    else:
+        return {'Error': 'No access token found.'}
+
+    if post_data:
+        response = post(api_base, headers=headers, data=post_data)
+        return {"Success": response.reason} if response.ok else {"Error": response.json()}
+    elif put_data:
+        response = put(api_base, headers=headers, json=put_data)
+        return {"Success": response.reason} if response.ok else {"Error": response.json()}
+    else:
+        response = get(api_base, {}, headers=headers)
+        try:
+            return response.json()
+        except Exception as ex:
+            return {'Error': f'response not in proper json format. Detail: {ex}'}
+    
+
+def get_user_devices(user_session):
+    response = spotify_web_api_operator(user_session=user_session, endpoint=constant.devices)
+
+    if 'Error' in response:
+        return {'Error_Type': 'Not Found', 'Error': response['Error'], 'Status': status.HTTP_404_NOT_FOUND}
+
+    if 'error' in response:
+        return {'Error_Type': 'No Content', 'Error': response['error'], 'Status': status.HTTP_204_NO_CONTENT}
+
+    if 'devices' not in response:
+        return {'Error_Type': 'No Content', 'Error': 'key argument "devices" not in the response', 'Status': status.HTTP_204_NO_CONTENT}
+
+    return response.get('devices')
