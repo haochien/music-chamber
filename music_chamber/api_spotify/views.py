@@ -8,7 +8,9 @@ from rest_framework import status
 
 from requests import Request, post, put
 
-from .utils import create_or_update_user_token, is_user_authenticated, fetch_user_token_info, spotify_web_api_operator, get_user_devices
+from .utils import create_or_update_user_token, is_user_authenticated, fetch_user_token_info,\
+                   spotify_web_api_operator, get_user_devices, get_song_info_by_id, get_song_on_play, get_my_playlist,\
+                   get_playlist_items, get_playback_state
 from api.models import Chamber
 from common.utils import constant
 
@@ -85,43 +87,6 @@ class GetUserToken(APIView):
             return Response({'Bad Request': "Access token for current session is not created yet"}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class GetSongOnPlay(APIView):
-    def get(self, request):
-        chamber_id = self.request.session['chamber_id']
-        chamber_queryset = Chamber.objects.filter(chamber_id=chamber_id)
-        if chamber_queryset.exists():
-            chamber_instance = chamber_queryset[0]
-        else:
-            return Response({}, status=status.HTTP_404_NOT_FOUND)
-
-        host_name = chamber_instance.host_name
-        
-        response = spotify_web_api_operator(user_session=host_name, endpoint=constant.currently_playing)
-        if 'Error' in response:
-            return Response({'Not Found': response['Error']}, status=status.HTTP_404_NOT_FOUND)
-        elif 'error' in response:
-            return Response({'No Content': response['error']}, status=status.HTTP_204_NO_CONTENT)
-        elif 'item' not in response:
-            return Response({'No Content': 'key argument "item" not in the response'}, status=status.HTTP_204_NO_CONTENT)
-        
-        item = response.get('item')
-        title = item.get('name')
-        duration = item.get('duration_ms')
-        progress = response.get('progress_ms')  #TODO: consider to implement progress time changing in future
-        album_cover = item.get('album').get('images')[0].get('url')
-        is_playing = response.get('is_playing')
-        song_id = item.get('id')
-
-        artist_string = ""
-        for i, artist in enumerate(item.get('artists')):
-            artist_string  = artist_string + ", " + artist.get('name') if i > 0 else artist.get('name')
-        
-        dict_song_info = {'title': title, 'artist': artist_string, 'duration': duration,
-                          'time': progress, 'image_url': album_cover, 'is_playing': is_playing,
-                          'votes': 0, 'id': song_id}
-
-        return Response(dict_song_info, status=status.HTTP_200_OK)
-
 class GetDevices(APIView):
     def get(self, request):
         response = get_user_devices(user_session=self.request.session.session_key)
@@ -148,3 +113,73 @@ class TransferDevice(APIView):
             return Response({"Success": f"Successfully connect to Music Chamber device {target_device_id}"}, status=status.HTTP_204_NO_CONTENT)
         
         return Response({"Error": f"Device Transfer failed. Error: {response['Error']}"}, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+
+class GetPlaybackState(APIView):
+    def get(self, request):
+        playback_state = get_playback_state(user_session=self.request.session.session_key)
+
+        if 'Error' in playback_state:
+            return Response({playback_state['Error_Type']: playback_state['Error']}, status=playback_state['Status'])
+
+        return Response(playback_state, status=status.HTTP_200_OK)
+
+
+
+class GetSongOnPlay(APIView):
+    def get(self, request):
+        chamber_id = self.request.session['chamber_id']
+        chamber_queryset = Chamber.objects.filter(chamber_id=chamber_id)
+        if chamber_queryset.exists():
+            chamber_instance = chamber_queryset[0]
+        else:
+            return Response({}, status=status.HTTP_404_NOT_FOUND)
+
+        host_name = chamber_instance.host_name
+        dict_song_info = get_song_on_play(user_session=host_name)
+
+        if 'Error' in dict_song_info:
+            return Response({dict_song_info['Error_Type']: dict_song_info['Error']}, status=dict_song_info['Status'])
+        else:
+            dict_song_info['votes'] = 0
+
+        return Response(dict_song_info, status=status.HTTP_200_OK)
+
+
+class GetSongInfo(APIView):
+    url_search_kwarg = 'song_id'
+
+    def get(self, request):
+        song_id = request.GET.get(self.url_search_kwarg)
+        song_info = get_song_info_by_id(user_session=self.request.session.session_key, song_id=song_id)
+
+        if 'Error' in song_info:
+            return Response({song_info['Error_Type']: song_info['Error']}, status=song_info['Status'])
+
+        return Response(song_info, status=status.HTTP_200_OK)
+
+
+class GetMyPlaylist(APIView):
+    def get(self, request):
+        playlist_info = get_my_playlist(user_session=self.request.session.session_key)
+
+        if 'Error' in playlist_info:
+            return Response({playlist_info['Error_Type']: playlist_info['Error']}, status=playlist_info['Status'])
+
+        if "playlist_info" in playlist_info:
+            return Response(playlist_info["playlist_info"], status=status.HTTP_200_OK)
+        
+        return Response({"Error": "No Playlist Info"}, status=status.HTTP_404_NOT_FOUND)
+
+
+class GetPlaylistItems(APIView):
+    url_search_kwarg = 'playlist_id'
+
+    def get(self, request):
+        playlist_id = request.GET.get(self.url_search_kwarg)
+        playlist_items = get_playlist_items(user_session=self.request.session.session_key, playlist_id=playlist_id)
+
+        if 'Error' in playlist_items:
+            return Response({playlist_items['Error_Type']: playlist_items['Error']}, status=playlist_items['Status'])
+
+        return Response(playlist_items, status=status.HTTP_200_OK)
