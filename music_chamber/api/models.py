@@ -13,6 +13,7 @@ class Chamber(models.Model):
     max_participant_number = models.IntegerField(default=1)
     is_public = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
+    song_on_play = models.CharField(max_length=50, null=True, blank=True)
 
     def __str__(self):
         return str(self.chamber_name)
