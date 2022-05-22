@@ -8,9 +8,11 @@ from rest_framework import status
 
 from requests import Request, post, put
 
+from .serializers import CreatePlaylistSerializer, PlaylistAddItemSerializer, ResumePlaybackSerializer
 from .utils import create_or_update_user_token, is_user_authenticated, fetch_user_token_info,\
                    spotify_web_api_operator, get_user_devices, get_song_info_by_id, get_song_on_play, get_my_playlist,\
-                   get_playlist_items, get_playback_state
+                   get_playlist_items, get_playback_state, get_my_profile, create_playlist, playlist_add_item,\
+                   resume_playlist
 from api.models import Chamber
 from common.utils import constant
 
@@ -26,7 +28,7 @@ class CheckUserAuth(APIView):
 class GetAuthURL(APIView):
     def get(self, request):
         #scopes = 'streaming user-read-email user-read-private'
-        scopes = 'streaming user-read-email user-read-private user-read-playback-state user-read-currently-playing user-modify-playback-state'
+        scopes = 'streaming user-read-email user-read-private user-read-playback-state user-read-currently-playing user-modify-playback-state playlist-modify-private playlist-modify-public'
 
         #TODO: add state into request
         auth_url = Request('GET', 'https://accounts.spotify.com/authorize', params={
@@ -108,7 +110,7 @@ class TransferDevice(APIView):
 
         data = {"device_ids": target_device_id, "play": True}
         response = spotify_web_api_operator(user_session=self.request.session.session_key, 
-                                            endpoint=constant.transfer_device, put_data=data)
+                                            endpoint=constant.playback_state, put_data=data)
         if 'Success' in response:
             return Response({"Success": f"Successfully connect to Music Chamber device {target_device_id}"}, status=status.HTTP_204_NO_CONTENT)
         
@@ -123,6 +125,30 @@ class GetPlaybackState(APIView):
             return Response({playback_state['Error_Type']: playback_state['Error']}, status=playback_state['Status'])
 
         return Response(playback_state, status=status.HTTP_200_OK)
+
+
+class ResumePlayback(APIView):
+    serializer_class = ResumePlaybackSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            context_uri = serializer.data.get('context_uri')
+            uris = [uris.strip() for uris in serializer.data.get('uris').split(",")]
+            offset = {"position": serializer.data.get('offset')}
+            position_ms = int(serializer.data.get('position_ms'))
+
+            data = {"context_uri": context_uri, "offset": offset, "position_ms":position_ms}
+            response = resume_playlist(user_session=self.request.session.session_key, data=data)
+
+            if 'Error' in response:
+                return Response({response['Error_Type']: response['Error']}, status=response['Status'])
+            else:
+                return Response(response, status=status.HTTP_202_ACCEPTED)
+        
+
+        return Response({'Bad Request': 'Invalid Input. Details: ' + str(serializer.errors) }, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 
@@ -183,3 +209,62 @@ class GetPlaylistItems(APIView):
             return Response({playlist_items['Error_Type']: playlist_items['Error']}, status=playlist_items['Status'])
 
         return Response(playlist_items, status=status.HTTP_200_OK)
+
+
+class GetMyProfile(APIView):
+    def get(self, request):
+        user_profile = get_my_profile(user_session=self.request.session.session_key)
+
+        if 'Error' in user_profile:
+            return Response({user_profile['Error_Type']: user_profile['Error']}, status=user_profile['Status'])
+
+        return Response(user_profile, status=status.HTTP_200_OK)
+
+
+class CreatePlaylist(APIView):
+    serializer_class = CreatePlaylistSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            playlist_name = serializer.data.get('name')
+            playlist_description = serializer.data.get('description')
+
+            user_profile = get_my_profile(user_session=self.request.session.session_key)
+            if 'Error' in user_profile:
+                return Response({user_profile['Error_Type']: user_profile['Error']}, status=user_profile['Status'])
+            else:
+                user_id = user_profile.get("id")
+
+            data = {'name': playlist_name, 'public': False, 'collaborative': True, 'description': playlist_description}
+            response = create_playlist(user_session=self.request.session.session_key, user_id=user_id, data=data)
+
+            if 'Error' in response:
+                return Response({response['Error_Type']: response['Error']}, status=response['Status'])
+            else:
+                return Response(response, status=status.HTTP_201_CREATED)
+
+
+        return Response({'Bad Request': 'Invalid Input. Details: ' + str(serializer.errors) }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PlaylistAddItem(APIView):
+    serializer_class = PlaylistAddItemSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            playlist_id = serializer.data.get('playlist_id')
+            track_uris = [uris.strip() for uris in serializer.data.get('track_uris').split(",")]
+
+            response = playlist_add_item(user_session=self.request.session.session_key, playlist_id=playlist_id, data={"uris": track_uris})
+
+            if 'Error' in response:
+                return Response({response['Error_Type']: response['Error']}, status=response['Status'])
+            else:
+                return Response(response, status=status.HTTP_201_CREATED)
+        
+
+        return Response({'Bad Request': 'Invalid Input. Details: ' + str(serializer.errors) }, status=status.HTTP_400_BAD_REQUEST)
+
+

@@ -75,11 +75,17 @@ def spotify_web_api_operator(user_session, endpoint, post_data=False, put_data=F
         return {'Error': 'No access token found.'}
 
     if post_data:
-        response = post(api_base, headers=headers, data=post_data)
-        return {"Success": response.reason} if response.ok else {"Error": response.json()}
+        response = post(api_base, headers=headers, json=post_data)
+        if response.ok:
+            return {"Success": response.reason} if len(response.text) == 0 else {"Success": response.json()}
+        else:
+            return {"Error": response.json()}
     elif put_data:
         response = put(api_base, headers=headers, json=put_data)
-        return {"Success": response.reason} if response.ok else {"Error": response.json()}
+        if response.ok:
+            return {"Success": response.reason} if len(response.text) == 0 else {"Success": response.json()}
+        else:
+            return {"Error": response.json()}
     else:
         response = get(api_base, {}, headers=headers)
         try:
@@ -160,9 +166,10 @@ def get_my_playlist(user_session):
     if dict_error is None:
         items = response.get('items')
         for item in items:
+            playlist_image = item.get("images")[0].get("url") if len(item.get("images")) > 0 else ""
             dict_playlist = {"id": item.get('id'), "name": item.get('name'), "tracks_href": item.get('tracks').get('href'),
                              "tracks_total": item.get('tracks').get('total'), "palylist_href": item.get('href'),
-                             "uri": item.get('uri'), "playlist_cover": item.get('images')[0].get('url')}
+                             "uri": item.get('uri'), "playlist_cover": playlist_image}
             list_playlist_info.append(dict_playlist)
 
     return {"playlist_info": list_playlist_info} if dict_error is None else dict_error
@@ -173,6 +180,56 @@ def get_playlist_items(user_session, playlist_id):
     dict_error = check_error_in_response(response, "items")
 
     if dict_error is None:
-        lst_item_details = [breakdown_track_dict(song_dict.get("track"), only_id=True) for song_dict in response.get("items")]
+        lst_item_details = [breakdown_track_dict(song_dict.get("track"), only_id=False) for song_dict in response.get("items")]
 
     return lst_item_details if dict_error is None else dict_error
+
+
+def get_my_profile(user_session):
+    response = spotify_web_api_operator(user_session=user_session, endpoint=constant.current_user)
+    dict_error = check_error_in_response(response)
+
+    if dict_error is None:
+        user_image = response.get("images")[0].get("url") if len(response.get("images")) > 0 else ""
+        user_profile = {"id": response.get("id"), "display_name": response.get("display_name"), "email": response.get("email"), 
+                        "country": response.get("country"), "href": response.get("href"), "images": user_image}
+
+    return user_profile if dict_error is None else dict_error
+
+
+def create_playlist(user_session, user_id, data):
+
+    response = spotify_web_api_operator(user_session=user_session, 
+                                        endpoint=constant.create_playlist.format(user_id=user_id), post_data=data)  
+    dict_error = check_error_in_response(response)
+
+    if dict_error is None and "Success" in response:
+        playlist_info = response["Success"]
+        return {"id": playlist_info["id"], "name": playlist_info["name"], "description": playlist_info["description"]}
+
+    return dict_error
+
+
+def playlist_add_item(user_session, playlist_id, data):
+    #TODO: check whether the track id has been in the playlist. If yes, then don't add
+    response = spotify_web_api_operator(user_session=user_session, 
+                                        endpoint=constant.playlist_items.format(playlist_id=playlist_id), post_data=data)  
+    dict_error = check_error_in_response(response)
+
+    if dict_error is None and "Success" in response:
+        added_track_snapshot = response["Success"]
+        return added_track_snapshot
+
+    return dict_error
+
+
+def resume_playlist(user_session, data):
+    response = spotify_web_api_operator(user_session=user_session, 
+                                        endpoint=constant.resume_playback, put_data=data)  
+    dict_error = check_error_in_response(response)
+
+    if dict_error is None and "Success" in response:
+        play_track_info = response["Success"]
+        return play_track_info
+
+    return dict_error

@@ -1,9 +1,11 @@
 # Sportify End Point
 
+current_user = "me"
 playback_state = "me/player"
-transfer_device = "me/player"
+resume_playback = "me/player/play"
 devices = "me/player/devices"
 currently_playing = "me/player/currently-playing"
 song_info = "tracks/{id}"
 my_playlist = "me/playlists"
 playlist_items = "playlists/{playlist_id}/tracks"
+create_playlist = "users/{user_id}/playlists"
