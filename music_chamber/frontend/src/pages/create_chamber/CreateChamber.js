@@ -4,7 +4,7 @@ import { Avatar, Button, TextField, FormControl,
   Grid, Box, Typography, Container } from '@mui/material'
 import MusicNote from '@mui/icons-material/MusicNote';
 import { useNavigate } from 'react-router-dom';
-
+import { useSession } from '../../hooks/useSession';
 
 
 
@@ -14,6 +14,7 @@ export default function CreateChamber() {
   const [isPublic, setIsPublic] = useState(true);
 
   const navigate = useNavigate()
+  const csrftoken = useSession('csrftoken')
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -27,12 +28,14 @@ export default function CreateChamber() {
     };
     const jsonPostData = JSON.stringify(postData, null, '')
 
-    
     const requestOption = {
+      //credentials: 'include',
+      //mode: 'same-origin',
       method: "POST",
       headers: {
         //'Accept': 'application/json, text/plain, */*',
         'Content-Type': 'application/json',
+        'X-CSRFToken': csrftoken,
       },
       body: jsonPostData,
     };

@@ -134,7 +134,7 @@ def breakdown_track_dict(response, only_id=False):
     album_cover = item.get('album').get('images')[0].get('url')
     popularity = item.get('popularity')
     uri = item.get('uri')
-    progress = response.get('progress_ms') if 'progress_ms' in response else ""  #TODO: consider to implement progress time changing in future
+    progress = response.get('progress_ms') if 'progress_ms' in response else 0
     is_playing = response.get('is_playing') if 'is_playing' in response else ""
 
     artist_string = ""

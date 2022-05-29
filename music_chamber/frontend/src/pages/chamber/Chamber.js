@@ -1,5 +1,6 @@
 import {useEffect, useState} from 'react'
 import { useParams } from 'react-router-dom'
+import { useSession } from '../../hooks/useSession';
 
 import SpotifyPlayback from '../../components/SpotifyPlayback'
 
@@ -8,13 +9,67 @@ import './Chamber.css'
 
 export default function Chamber() {
 
-	const { id } = useParams()
+	const csrftoken = useSession('csrftoken')
+  const { id } = useParams()
 	const [url, setUrl] = useState('/api/get-chamber?id=' + id)
 	const [objChamberInfo, setObjChamberInfo] = useState('')
 
   const [userAuthStatus, setUserAuthStatus] = useState(false)
   const [accessToken, setAccessToken] = useState('')
 
+  //const [playlistId, setPlaylistId] = useState('')
+
+  const createPlaylist = () => {
+    fetch("/api-spotify/create-playlist", {method: "PUT", headers: {'X-CSRFToken': csrftoken}})
+      .then(response => response.json())
+      .then((data) => {
+        //setPlaylistId(data.id);
+        //console.log('list_id: ', data.id)
+        if (data.id) {
+          addSong(data.id)
+        }
+      })
+  }
+
+
+  const requestOption = (jsonData) =>{
+    const optionData = {
+      method: "PUT",
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrftoken,
+      },
+      body: jsonData,
+    }
+    return optionData
+  } 
+  
+  
+  const addSong = (playlistId) => {
+
+    const dataAddSong = {
+      playlist_id: playlistId,
+      track_uris: "spotify:track:0iLI1bC10ff1qmiwJL680w",
+    };
+    const jsonAddSong = JSON.stringify(dataAddSong, null, '')
+
+    const dataResumeSong = {
+      context_uri: playlistId,
+    };
+    const jsonResumeSong = JSON.stringify(dataResumeSong, null, '')
+
+    fetch("/api-spotify/playlist-add-item", requestOption(jsonAddSong))
+      .then(response => response.json())
+      .then((data) => {
+        //This need to run  after playback sdk has been setup
+        fetch("/api-spotify/resume-playback", requestOption(jsonResumeSong))
+      })
+  }
+
+
+
+  
+  
   const loginSpotify = () => {
     fetch("/api-spotify/check-user-auth")
       .then((response) => response.json())
@@ -33,7 +88,11 @@ export default function Chamber() {
             .then(response => response.json())
             .then((data) => {
               setAccessToken(data.access_token)
-          })
+            })
+            .then(() => {
+              createPlaylist()
+            })
+            
         }
 
       })
