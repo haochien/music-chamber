@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useSession } from '../hooks/useSession';
 
-export default function SpotifyPlayback(props) {
+export default function SpotifyPlayback({ token, switchSdkPlaybackStatus}) {
   
   const track = {
     name: "",
@@ -14,22 +15,28 @@ export default function SpotifyPlayback(props) {
     ]
 }
   
-  const user_token = props.token
+  const user_token = token
+  const csrftoken = useSession('csrftoken')
   const [player, setPlayer] = useState(undefined);
   const [is_paused, setPaused] = useState(false);
   const [is_active, setActive] = useState(false);
   const [current_track, setTrack] = useState(track);
+  const [currentSongID, setCurrentSongID] = useState('');
   const [deviceSwitchStatus, setIsDeviceSwitchStatus] = useState(false);
   
   const switchDevice = () => {
-    fetch("/api-spotify/transfer-device", {method: "PUT"})
+    fetch("/api-spotify/transfer-device", {method: "PUT", headers: {'X-CSRFToken': csrftoken}})
       .then((response) => {
-        setIsDeviceSwitchStatus(response)
+        if(response.ok) {
+          setIsDeviceSwitchStatus(response)
+          switchSdkPlaybackStatus(true)
+        }
+        
       })
   }
-  useEffect(() => console.log(deviceSwitchStatus), [deviceSwitchStatus]);
+  //useEffect(() => console.log(deviceSwitchStatus), [deviceSwitchStatus]);
 
-  
+
   useEffect(() => {
     if (user_token) {
       const script = document.createElement("script");
@@ -74,37 +81,45 @@ export default function SpotifyPlayback(props) {
           });
 
           player.addListener('initialization_error', ({ message }) => { 
-            console.error(message);
+            console.error('Failed to initialize: ', message);
           });
       
           player.addListener('authentication_error', ({ message }) => {
-              console.error(message);
+              console.error('Failed to authenticate: ', message);
           });
       
           player.addListener('account_error', ({ message }) => {
-              console.error(message);
+              console.error('Failed to validate Spotify account: ', message);
           });
 
           player.addListener('player_state_changed', ( state => {
             if (!state) {
+                setActive(false)
+                console.log("player active state turn false.")
                 return;
             }
         
+            setActive(true) 
             setTrack(state.track_window.current_track);
             setPaused(state.paused);
-            player.getCurrentState().then( state => { 
-                (!state) ? setActive(false) : setActive(true) 
+            setCurrentSongID(state.track_window.current_track.id)
+            console.log(state)
 
-                var current_track = state.track_window.current_track;
-                var next_track = state.track_window.next_tracks[0];
-            });
+            // player.getCurrentState().then( state => { 
+            //     (!state) ? setActive(false) : setActive(true) 
+            //     var current_track = state.track_window.current_track;
+            //     var next_track = state.track_window.next_tracks[0];
+            // });
+
+            //   console.log('Position in Song', position);
+            //   console.log('Duration of Song', duration);
         
-        }));
+          }));
 
 
           player.connect().then((success) => {
             if (success) {
-              console.log("The Web Playback SDK successfully connected to Spotify!");
+              //console.log("The Web Playback SDK successfully connected to Spotify!");
             }
           });
 

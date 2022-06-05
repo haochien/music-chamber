@@ -14,8 +14,12 @@ class Chamber(models.Model):
     is_public = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     song_on_play = models.CharField(max_length=50, null=True, blank=True)
+    song_duration = models.IntegerField(null=True, blank=True)
+    song_end_at = models.DateTimeField(null=True, blank=True)
+    play_list_on_play = models.CharField(max_length=50, null=True, blank=True)
 
     def __str__(self):
         return str(self.chamber_name)
 
 
+#class ChamberCurrentSong(models.Model):
