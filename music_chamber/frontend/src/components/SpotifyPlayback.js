@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSession } from '../hooks/useSession';
 
-export default function SpotifyPlayback(props) {
+export default function SpotifyPlayback({ token, switchSdkPlaybackStatus}) {
   
   const track = {
     name: "",
@@ -15,7 +15,7 @@ export default function SpotifyPlayback(props) {
     ]
 }
   
-  const user_token = props.token
+  const user_token = token
   const csrftoken = useSession('csrftoken')
   const [player, setPlayer] = useState(undefined);
   const [is_paused, setPaused] = useState(false);
@@ -27,7 +27,11 @@ export default function SpotifyPlayback(props) {
   const switchDevice = () => {
     fetch("/api-spotify/transfer-device", {method: "PUT", headers: {'X-CSRFToken': csrftoken}})
       .then((response) => {
-        setIsDeviceSwitchStatus(response)
+        if(response.ok) {
+          setIsDeviceSwitchStatus(response)
+          switchSdkPlaybackStatus(true)
+        }
+        
       })
   }
   //useEffect(() => console.log(deviceSwitchStatus), [deviceSwitchStatus]);

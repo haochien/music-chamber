@@ -132,15 +132,15 @@ class GetPlaybackState(APIView):
 
 
 class ResumePlayback(APIView):
-    #TODO: get current song and progress time
     serializer_class = ResumePlaybackSerializer
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            context_uri = serializer.data.get('context_uri')
-            uris = [uris.strip() for uris in serializer.data.get('uris').split(",")]
-            offset = {"position": serializer.data.get('offset')}
+            context_uri = constant.uri_playlist + serializer.data.get('context_uri')
+            #uris = [uris.strip() for uris in serializer.data.get('uris').split(",")]
+            uri = constant.uri_track + serializer.data.get('uris')
+            offset = {"uri": uri} if len(uri) > 0 else {"position": serializer.data.get('offset')}
             position_ms = int(serializer.data.get('position_ms'))
 
             data = {"context_uri": context_uri, "offset": offset, "position_ms":position_ms}
@@ -163,11 +163,9 @@ class ResumePlayback(APIView):
             return Response({}, status=status.HTTP_404_NOT_FOUND)
 
         play_list_on_play, song_on_play, song_progress = self.get_song_in_chamber(chamber_instance)
-        uris = [constant.uri_track+str(song_on_play)]
-        offset = {"position": 0}
+        uri = constant.uri_track + str(song_on_play)
+        offset = {"uri": uri} if len(uri) > 0 else {"position": 0}
 
-        #TODO: "Only one of either \"context_uri\" or \"uris\" can be specified"
-        #TODO: now directly start the first song of the playlist
         data = {"context_uri": constant.uri_playlist+str(play_list_on_play), "offset": offset, "position_ms":song_progress}
         response = resume_playlist(user_session=self.request.session.session_key, data=data)
 
@@ -358,21 +356,20 @@ class PlaylistAddItem(APIView):
         if serializer.is_valid():
             playlist_id = serializer.data.get('playlist_id')
             track_uris = [uris.strip() for uris in serializer.data.get('track_uris').split(",")]
-            if len(track_uris) > 1:
-                return Response({'Error': 'You cannot add more than 1 song at the time by PUT request' }, status=status.HTTP_403_FORBIDDEN)
-            else:
-                response = playlist_add_item(user_session=self.request.session.session_key, playlist_id=playlist_id, data={"uris": track_uris})
+
+            response = playlist_add_item(user_session=self.request.session.session_key, playlist_id=playlist_id, data={"uris": track_uris})
 
             if 'Error' in response:
                 return Response({response['Error_Type']: response['Error']}, status=response['Status'])
             else:
-                song_id = serializer.data.get('track_uris').split(constant.uri_track)[1]
+                song_id = track_uris[0].split(constant.uri_track)[1]
                 song_info = get_song_info_by_id(user_session=self.request.session.session_key, song_id=song_id)
 
                 if 'Error' in song_info:
                     return Response({song_info['Error_Type']: song_info['Error']}, status=song_info['Status'])
                 else:
-                    self.store_song_info(chamber_queryset, song_id, song_info['duration'], song_info['time'])
+                    if chamber_instance.song_on_play is None:
+                        self.store_song_info(chamber_queryset, song_id, song_info['duration'], song_info['time'])
 
                 return Response(response, status=status.HTTP_201_CREATED)
         
