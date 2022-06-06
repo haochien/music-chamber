@@ -8,7 +8,7 @@ class CreatePlaylistSerializer(serializers.Serializer):
 
 class PlaylistAddItemSerializer(serializers.Serializer):
     playlist_id = serializers.CharField(max_length=100)
-    track_uris = serializers.CharField()
+    track_id = serializers.CharField()
 
 
 class ResumePlaybackSerializer(serializers.Serializer):

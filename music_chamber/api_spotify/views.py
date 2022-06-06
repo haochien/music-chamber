@@ -330,7 +330,7 @@ class PlaylistAddItem(APIView):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             playlist_id = serializer.data.get('playlist_id')
-            track_uris = [uris.strip() for uris in serializer.data.get('track_uris').split(",")]
+            track_uris = [constant.uri_track + uris.strip() for uris in serializer.data.get('track_id').split(",")]
 
             response = playlist_add_item(user_session=self.request.session.session_key, playlist_id=playlist_id, data={"uris": track_uris})
 
@@ -355,7 +355,7 @@ class PlaylistAddItem(APIView):
 
         if serializer.is_valid():
             playlist_id = serializer.data.get('playlist_id')
-            track_uris = [uris.strip() for uris in serializer.data.get('track_uris').split(",")]
+            track_uris = [constant.uri_track + uris.strip() for uris in serializer.data.get('track_id').split(",")]
 
             response = playlist_add_item(user_session=self.request.session.session_key, playlist_id=playlist_id, data={"uris": track_uris})
 
