@@ -14,7 +14,7 @@ export default function MsgBar({ showMsg, msgType, duration, msgContent, switchM
       open={showMsg}
       message="test"
       onClose={() => switchMsgBar(false)}
-      anchorOrigin={{vertical:'bottom', horizontal:'center'}}
+      anchorOrigin={{vertical:'top', horizontal:'center'}}
     >
       <Alert onClose={() => switchMsgBar(false)} severity={msgType} sx={{ width: '100%' }}>
         {msgContent}

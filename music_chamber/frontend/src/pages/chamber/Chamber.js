@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useSession } from '../../hooks/useSession';
 
 import SpotifyPlayback from '../../components/SpotifyPlayback'
+import AddSong from '../../components/AddSong'
 
 // styles
 import './Chamber.css'
@@ -19,6 +20,9 @@ export default function Chamber() {
 
   const [playlistId, setPlaylistId] = useState('')
   const [isSdkPlaybackOn, setIsSdkPlaybackOn] = useState(false)
+
+  const [openAddSong, setOpenAddSong] = useState(false);
+  const [songIdsToBeAdded, setSongIdsToBeAdded] = useState([]);
 
   
   const requestOption = (jsonData) =>{
@@ -39,6 +43,14 @@ export default function Chamber() {
     setIsSdkPlaybackOn(trueOrFalse)
   };
 
+  const switchOpenAddSong = (trueOrFalse) => {
+    setOpenAddSong(trueOrFalse)
+  };
+
+  const updateSongIdsToBeAdded = (arraySongId) => {
+    setSongIdsToBeAdded(arraySongId)
+  };
+
 
   const createPlaylist = async () => {
     console.log('start creating playlist...')
@@ -52,10 +64,10 @@ export default function Chamber() {
   const addSong = async () => {
     console.log('start adding song. song id: ', playlistId)
 
-    if (playlistId) {
+    if (playlistId && songIdsToBeAdded.length>0) {
       const dataAddSong = {
         playlist_id: playlistId,
-        track_uris: "spotify:track:0iLI1bC10ff1qmiwJL680w, spotify:track:4vVOuveXRA5P41lEbZfoBH, spotify:track:04DYiSKmP437iS9t48loby",
+        track_id: songIdsToBeAdded.join(","),
       };
       const jsonAddSong = JSON.stringify(dataAddSong, null, '')
 
@@ -100,6 +112,7 @@ export default function Chamber() {
 
 
 	useEffect(async () => {
+    // get chamber info and login spotify
 		const res_get_chamber = await fetch(url)
     const data_get_chamber = await res_get_chamber.json()
     setObjChamberInfo(data_get_chamber)
@@ -108,6 +121,7 @@ export default function Chamber() {
 
 
   useEffect(() => {
+    // create playlist (for host) or directly play song (for guest) after sdk playback is created
     console.log('check room issdkstatus: ', isSdkPlaybackOn)
     if (isSdkPlaybackOn && objChamberInfo.is_host) {
       console.log('creatPlaylist function start...')
@@ -120,13 +134,25 @@ export default function Chamber() {
 
 
   useEffect( async () => {
+    // show add song ui after playlist is created
     if (playlistId && objChamberInfo.is_host) {
-      console.log('addSong function start...')
-      await addSong()
-      console.log('resumePlayback function start...')
-      await resumePlayback()
+      switchOpenAddSong(true)
     }
   }, [playlistId])
+
+
+  useEffect( async () => {
+    // add songs to system after user has selected his/her song
+    if (songIdsToBeAdded.length>0) {
+      console.log('I am going to add the song')
+      addSong()
+
+      // console.log('addSong function start...')
+      // await addSong()
+      // console.log('resumePlayback function start...')
+      // await resumePlayback()
+    }
+  }, [songIdsToBeAdded])
 
 
   //useEffect(() => console.log(userAuthStatus), [userAuthStatus]);
@@ -142,6 +168,7 @@ export default function Chamber() {
         <p>Is Public Chamber: {objChamberInfo ? objChamberInfo.is_public.toString() : ''}</p>
         <p>Are You Host: {objChamberInfo ? objChamberInfo.is_host.toString() : ''}</p>
         <SpotifyPlayback token={accessToken} switchSdkPlaybackStatus={switchSdkPlaybackStatus} />
+        <AddSong openAddSong={openAddSong} switchOpenAddSong={switchOpenAddSong} updateSongIdsToBeAdded={updateSongIdsToBeAdded}/>
     </div>
   )
 }

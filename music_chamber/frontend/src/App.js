@@ -7,6 +7,7 @@ import { CssBaseline } from '@mui/material';
 import Home from './pages/home/Home'
 import CreateChamber from './pages/create_chamber/CreateChamber'
 import Chamber from './pages/chamber/Chamber'
+import TestPage from './pages/test_page/TestPage'
 
 
 
@@ -20,6 +21,7 @@ function App() {
             <Route path="/" element={<Home />}/>
             <Route path="/create-chamber" element={<CreateChamber />}/>
             <Route path="/chamber/:id" element={<Chamber />}/>
+            <Route path="/test-page/" element={<TestPage />}/>
           </Routes>
         </BrowserRouter>
       </div>
