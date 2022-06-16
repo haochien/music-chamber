@@ -134,7 +134,7 @@ export default function SpotifyPlayback({ token, switchSdkPlaybackStatus}) {
   return (
     <>
       <div className="container">
-          <div className="main-wrapper">
+          {/* <div className="main-wrapper">
 
             <img src={current_track.album.images[0].url} 
                      className="now-playing__cover" alt="" />
@@ -161,7 +161,7 @@ export default function SpotifyPlayback({ token, switchSdkPlaybackStatus}) {
                   &gt;&gt;
             </button>
 
-          </div>
+          </div> */}
       </div>
     </>
   )

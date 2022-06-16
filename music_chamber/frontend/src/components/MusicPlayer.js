@@ -1,10 +1,11 @@
 import {useEffect, useState} from 'react';
+import { useSession } from '../hooks/useSession';
 import { styled } from '@mui/material/styles';
 import Card from '@mui/material/Card';
 import CardActions from '@mui/material/CardActions';
 import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
-import Avatar from '@mui/material/Avatar';
+import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
@@ -18,6 +19,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import LinearProgress from '@mui/material/LinearProgress';
 import Collapse from '@mui/material/Collapse';
 import Box from '@mui/material/Box';
+
 
 
 const ExpandMore = styled((props) => {
@@ -79,30 +81,37 @@ const translatePopularity = (popularityValue) => {
 }
 
 
-export default function TestPage({song_name, song_singer, durationInMs, song_energy, song_danceability, song_happiness, 
-                                  song_acousticness, song_speechiness, song_popularity, song_tempo,
-                                  isPlay, togglePlay, isFavorite, toggleFavorite, isSkip, toggleSkip}) {
-  // const song_name = 'Those Eyes'
-  // const song_singer = 'New West'
-  // const durationInMs = 180000
-  // const song_energy = 0.842
-  // const song_danceability = 0.842
-  // const song_happiness = 0.842
-  // const song_acousticness = 0.142
-  // const song_speechiness = 0.0556
-  // const song_popularity = 72
-  // const song_tempo = 118.211
-  // const [isPlay, setIsPlay] = useState(false);
-  // const [isFavorite, setIsFavorite] = useState(false);
-  // const [isSkip, setIsSkip] = useState(false);
+export default function MusicPlayer({song_name, song_singer, durationInMs, song_energy, song_danceability, song_happiness, 
+  song_acousticness, song_speechiness, song_popularity, song_tempo,
+  isPlay, togglePlay, isFavorite, toggleFavorite, isSkip, toggleSkip}) {
 
   const [progress, setProgress] = useState(0);
   const [expanded, setExpanded] = useState(false);
 
+  const csrftoken = useSession('csrftoken')
+  const requestOption = (jsonData) =>{
+    const optionData = {
+      method: "PUT",
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrftoken,
+      },
+      body: jsonData,
+    }
+    return optionData
+  } 
 
-  // const togglePlay = () => { if (isPlay) {setIsPlay(false)} else {setIsPlay(true)} }
-  // const toggleFavorite = () => { if (isFavorite) {setIsFavorite(false)} else {setIsFavorite(true)} }
-  // const toggleSkip = () => { if (isSkip) {setIsSkip(false)} else {setIsSkip(true)} }
+  const changeValume = async (volume_percent) => {
+    console.log('start change volume...')
+    const dataChangeValume = {
+      volume_percent: volume_percent,
+    };
+    const jsonChangeValume = JSON.stringify(dataChangeValume, null, '')
+  
+    const res = await fetch("/api-spotify/change-volume", requestOption(jsonChangeValume))
+    console.log('Volume Changed. New Volume:', volume_percent)
+  }
+
 
   const handleExpandClick = () => {
     setExpanded(!expanded);
@@ -125,7 +134,18 @@ export default function TestPage({song_name, song_singer, durationInMs, song_ene
     };
   }, [durationInMs]);
 
+
+  useEffect(() => {
+    if (isPlay) {
+      changeValume(90)
+    } else {
+      changeValume(0)
+    }
+  }, [isPlay])
+
+
   return (
+
     <div>
 
     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'right', maxWidth: 450, mr: 1}}>
@@ -138,7 +158,6 @@ export default function TestPage({song_name, song_singer, durationInMs, song_ene
         </Typography>
       </Box>
     </Box>
-
 
     <Card sx={{ maxWidth: 450, minHeight: 450, borderRadius:3, background: 'linear-gradient(to right top, #86a8e7, #97b4ec, #a7c0f0, #b7ccf5, #c7d8f9, #c7d8f9, #c7d8f9, #c7d8f9, #b7ccf5, #a7c0f0, #97b4ec, #86a8e7)'}}>
       <CardMedia
@@ -198,6 +217,7 @@ export default function TestPage({song_name, song_singer, durationInMs, song_ene
       </Collapse>
 
     </Card>
+
     </div>
   );
 }

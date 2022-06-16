@@ -1,7 +1,8 @@
 from django.urls import path
 from .views import GetAuthURL, get_auth_callback, CheckUserAuth, GetUserToken, GetSongOnPlay, \
                    GetDevices, TransferDevice, GetSongInfo, GetMyPlaylist, GetPlaylistItems, \
-                   GetPlaybackState, GetMyProfile, CreatePlaylist, PlaylistAddItem, ResumePlayback
+                   GetPlaybackState, GetMyProfile, CreatePlaylist, PlaylistAddItem, ResumePlayback, \
+                   ChangePlaybackVolume
 
 urlpatterns = [
     path('check-user-auth', CheckUserAuth.as_view()),
@@ -23,6 +24,7 @@ urlpatterns = [
     path('playlist-add-item', PlaylistAddItem.as_view()),
 
     path('resume-playback', ResumePlayback.as_view()),
+    path('change-volume', ChangePlaybackVolume.as_view()),
     
 
 ]

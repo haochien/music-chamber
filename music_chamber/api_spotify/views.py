@@ -11,11 +11,12 @@ from rest_framework import status
 
 from requests import Request, post, put
 
-from .serializers import CreatePlaylistSerializer, PlaylistAddItemSerializer, ResumePlaybackSerializer
+from .serializers import CreatePlaylistSerializer, PlaylistAddItemSerializer, ResumePlaybackSerializer, \
+                         ChangePlaybackVolumeSerializer
 from .utils import create_or_update_user_token, is_user_authenticated, fetch_user_token_info,\
                    spotify_web_api_operator, get_user_devices, get_song_info_by_id, get_song_on_play, get_my_playlist,\
                    get_playlist_items, get_playback_state, get_my_profile, create_playlist, playlist_add_item,\
-                   resume_playlist
+                   resume_playlist, change_playback_volume
 from api.models import Chamber
 from common.utils import constant
 from common.utils.work_with_model import WorkWithModel
@@ -112,7 +113,7 @@ class TransferDevice(APIView):
         if len(target_device_id) == 0:
             return Response({"Not Found": "Cannot find spotify device of Music Chamber"}, status=status.HTTP_404_NOT_FOUND)
 
-        data = {"device_ids": target_device_id, "play": True}
+        data = {"device_ids": target_device_id, "play": False}
         response = spotify_web_api_operator(user_session=self.request.session.session_key, 
                                             endpoint=constant.playback_state, put_data=data)
         if 'Success' in response:
@@ -384,3 +385,20 @@ class PlaylistAddItem(APIView):
 
         #if song_on_play != song_id:
         WorkWithModel.create_or_update_model(Chamber, list_model_fields, list_model_values, 'update', chamber_queryset)
+
+
+class ChangePlaybackVolume(APIView): 
+    serializer_class = ChangePlaybackVolumeSerializer
+
+    def put(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            response = change_playback_volume(user_session=self.request.session.session_key, 
+                                              volume_percent= serializer.data.get('volume_percent'))     
+            if 'Error' in response:
+                return Response({response['Error_Type']: response['Error']}, status=response['Status'])
+            else:
+                return Response(response, status=status.HTTP_204_NO_CONTENT)
+
+        return Response({'Bad Request': 'Invalid Input. Details: ' + str(serializer.errors) }, status=status.HTTP_400_BAD_REQUEST)
+
