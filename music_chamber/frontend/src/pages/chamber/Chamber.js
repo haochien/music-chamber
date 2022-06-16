@@ -1,12 +1,20 @@
 import {useEffect, useState} from 'react'
 import { useParams } from 'react-router-dom'
 import { useSession } from '../../hooks/useSession';
+import { Box } from '@mui/material'
 
 import SpotifyPlayback from '../../components/SpotifyPlayback'
 import AddSong from '../../components/AddSong'
+import MusicPlayer from '../../components/MusicPlayer'
 
 // styles
 import './Chamber.css'
+
+const song_info = {
+  song_name:'Those Eyes', song_singer:'New West', durationInMs:180000, song_energy:0.842, 
+  song_danceability:0.842, song_happiness:0.842, song_acousticness:0.142,
+  song_speechiness:0.0556, song_popularity:72, song_tempo:118.211
+}
 
 export default function Chamber() {
 
@@ -24,6 +32,10 @@ export default function Chamber() {
   const [openAddSong, setOpenAddSong] = useState(false);
   const [songIdsToBeAdded, setSongIdsToBeAdded] = useState([]);
 
+  const [openMusicPlayer, setOpenMusicPlayer] = useState(false);
+  const [isPlay, setIsPlay] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [isSkip, setIsSkip] = useState(false);
   
   const requestOption = (jsonData) =>{
     const optionData = {
@@ -50,6 +62,11 @@ export default function Chamber() {
   const updateSongIdsToBeAdded = (arraySongId) => {
     setSongIdsToBeAdded(arraySongId)
   };
+
+
+  const togglePlay = () => { if (isPlay) {setIsPlay(false)} else {setIsPlay(true)} }
+  const toggleFavorite = () => { if (isFavorite) {setIsFavorite(false)} else {setIsFavorite(true)} }
+  const toggleSkip = () => { if (isSkip) {setIsSkip(false)} else {setIsSkip(true)} }
 
 
   const createPlaylist = async () => {
@@ -145,14 +162,21 @@ export default function Chamber() {
     // add songs to system after user has selected his/her song
     if (songIdsToBeAdded.length>0) {
       console.log('I am going to add the song')
-      addSong()
-
-      // console.log('addSong function start...')
-      // await addSong()
-      // console.log('resumePlayback function start...')
-      // await resumePlayback()
+      await addSong()
+      setOpenMusicPlayer(true)
     }
   }, [songIdsToBeAdded])
+
+
+  useEffect( async () => {
+    // start play song once host has finished the add song process
+    if (openMusicPlayer) {
+      await resumePlayback()
+      setIsPlay(true)
+    } 
+  }, [openMusicPlayer])
+
+
 
 
   //useEffect(() => console.log(userAuthStatus), [userAuthStatus]);
@@ -160,15 +184,25 @@ export default function Chamber() {
 
   return (
     <div>
-        <p>Chamber ID: {objChamberInfo ? objChamberInfo.chamber_id : ''}</p>
+        {/* <p>Chamber ID: {objChamberInfo ? objChamberInfo.chamber_id : ''}</p>
         <p>Chamber Name: {objChamberInfo ? objChamberInfo.chamber_name : ''}</p>
         <p>Guest Can Pause: {objChamberInfo ? objChamberInfo.access_guest_can_pause.toString() : ''}</p>
         <p>Votes Required to Skip Song: {objChamberInfo ? objChamberInfo.votes_song_skip : ''}</p>
         <p>Chamber Created at: {objChamberInfo ? objChamberInfo.created_at : ''}</p>
         <p>Is Public Chamber: {objChamberInfo ? objChamberInfo.is_public.toString() : ''}</p>
-        <p>Are You Host: {objChamberInfo ? objChamberInfo.is_host.toString() : ''}</p>
+        <p>Are You Host: {objChamberInfo ? objChamberInfo.is_host.toString() : ''}</p> */}
         <SpotifyPlayback token={accessToken} switchSdkPlaybackStatus={switchSdkPlaybackStatus} />
         <AddSong openAddSong={openAddSong} switchOpenAddSong={switchOpenAddSong} updateSongIdsToBeAdded={updateSongIdsToBeAdded}/>
+        {
+          openMusicPlayer && <Box sx={{
+            display: 'flex', flexDirection: 'column', justifyContent: "center",
+            alignItems: 'center', minHeight: '100vh',
+          }}>
+            <MusicPlayer {...song_info} isPlay={isPlay} togglePlay={togglePlay} 
+                         isFavorite={isFavorite} toggleFavorite={toggleFavorite} isSkip={isSkip} toggleSkip={toggleSkip}/>
+          </Box>
+        }
+        
     </div>
   )
 }

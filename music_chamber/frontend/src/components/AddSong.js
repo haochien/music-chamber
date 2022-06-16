@@ -85,6 +85,7 @@ export default function AddSong({ openAddSong, switchOpenAddSong, updateSongIdsT
       <div>
 
         <Dialog open={openAddSong} onClose={handleClose} scroll='paper' fullWidth={true} disableEscapeKeyDown={true}>
+          <Box sx={{background: 'linear-gradient(to right top, #86a8e7, #97b4ec, #a7c0f0, #b7ccf5, #c7d8f9, #c7d8f9, #c7d8f9, #c7d8f9, #b7ccf5, #a7c0f0, #97b4ec, #86a8e7)'}}>
           <DialogTitle>Add Songs to Playlist</DialogTitle>
           <DialogContent>
             <DialogContentText>
@@ -176,6 +177,7 @@ export default function AddSong({ openAddSong, switchOpenAddSong, updateSongIdsT
           <DialogActions>
             <Button onClick={confirmAddSong}>Add Song</Button>
           </DialogActions>
+          </Box>
         </Dialog>
 
         <MsgBar showMsg={showMsg} msgType="error" duration={3000} msgContent={err} switchMsgBar={switchMsgBar} />

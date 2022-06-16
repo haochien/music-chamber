@@ -16,3 +16,7 @@ class ResumePlaybackSerializer(serializers.Serializer):
     uris = serializers.CharField(default="")
     offset = serializers.IntegerField(default=0)
     position_ms = serializers.IntegerField(default=0)
+
+
+class ChangePlaybackVolumeSerializer(serializers.Serializer):
+    volume_percent = serializers.IntegerField(min_value=0, max_value=100)

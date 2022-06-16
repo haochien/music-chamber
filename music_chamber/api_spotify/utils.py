@@ -74,13 +74,13 @@ def spotify_web_api_operator(user_session, endpoint, post_data=False, put_data=F
     else:
         return {'Error': 'No access token found.'}
 
-    if post_data:
+    if post_data != False:
         response = post(api_base, headers=headers, json=post_data)
         if response.ok:
             return {"Success": response.reason} if len(response.text) == 0 else {"Success": response.json()}
         else:
             return {"Error": response.json()}
-    elif put_data:
+    elif put_data != False:
         response = put(api_base, headers=headers, json=put_data)
         if response.ok:
             return {"Success": response.reason} if len(response.text) == 0 else {"Success": response.json()}
@@ -226,6 +226,18 @@ def playlist_add_item(user_session, playlist_id, data):
 def resume_playlist(user_session, data):
     response = spotify_web_api_operator(user_session=user_session, 
                                         endpoint=constant.resume_playback, put_data=data)  
+    dict_error = check_error_in_response(response)
+
+    if dict_error is None and "Success" in response:
+        play_track_info = response["Success"]
+        return play_track_info
+
+    return dict_error
+
+
+def change_playback_volume(user_session, volume_percent):
+    response = spotify_web_api_operator(user_session=user_session, 
+                                        endpoint=constant.change_volume.format(volume_percent=volume_percent), put_data={})  
     dict_error = check_error_in_response(response)
 
     if dict_error is None and "Success" in response:
