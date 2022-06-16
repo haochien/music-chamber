@@ -4,7 +4,7 @@ The application for users to create a chamber and invite people to listen music 
 
 The application is built based on: Django | Django REST API | React JS
 
-## prerequisite
+## Prerequisite
 
 The music source of this application is from Spotify. 
 
