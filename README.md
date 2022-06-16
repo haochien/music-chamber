@@ -2,6 +2,14 @@
 
 The application for users to create a chamber and invite people to listen music (and control/edit music) together.
 
+The application is built based on: Django | Django REST API | React JS
+
+## prerequisite
+
+The music source of this application is from Spotify. 
+
+The application connect to many Spotify API. To successfully use all the function in this application, users must have Spotify Premium accounts.
+
 ## Setup Instructions
 
 ### 1. Install Required Python Modules
