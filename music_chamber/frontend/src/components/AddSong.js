@@ -1,4 +1,5 @@
 import {useEffect, useState} from 'react';
+import { useSongSearch } from '../hooks/useSongSearch';
 import MsgBar from './MsgBar';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
@@ -19,13 +20,7 @@ import IconButton from '@mui/material/IconButton';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 
 
-const reachResult1 = [{'id': '0edJN9w4tY8VXhNPt5U5qB', 'title': 'tty', 'artist': 'artist1', 'image_url': 'https://i.scdn.co/image/ab67616d0000b2734c57b4acb4247e80a70ca388', },
-                      {'id': '3kIFJsq83ecH3ingfUXVMZ', 'title': 'ffb', 'artist': 'artist2', 'image_url': 'https://i.scdn.co/image/ab67616d0000b273ba02e4c2026b51da26aa58bb'},]
-const reachResult2 = [{'id': '49pMAJwZxDKFo4yquBV8wS', 'title': 'ttx', 'artist': 'artist3', 'image_url': 'https://i.scdn.co/image/ab67616d0000b273c96643131bb37cdf53890096'},
-                      {'id': '07NQhM4kudAA1CgC61sjfX', 'title': 'ffa', 'artist': 'artist4', 'image_url': 'https://i.scdn.co/image/ab67616d0000b27395a8175e345a0c14f3dddadd'},]
-
-export default function AddSong({ openAddSong, switchOpenAddSong, updateSongIdsToBeAdded}) {
-    //const [open, setOpen] = useState(true);
+export default function AddSong({ token, openAddSong, switchOpenAddSong, updateSongIdsToBeAdded}) {
     const [openSongSearchList, setOpenSongSearchList] = useState(false);
     const [queryResult, setQueryResult] = useState([])
     const [queryInput, setQueryInput] = useState([])
@@ -34,6 +29,7 @@ export default function AddSong({ openAddSong, switchOpenAddSong, updateSongIdsT
     const [showMsg, setShowMsg] = useState(false);
     const [err, setErr] = useState('')
 
+    const dataResult = useSongSearch(token, queryInput)
 
     const switchMsgBar = (trueOrFalse) => {
       setShowMsg(trueOrFalse)
@@ -70,16 +66,15 @@ export default function AddSong({ openAddSong, switchOpenAddSong, updateSongIdsT
       }
     }
 
+    
     useEffect(() => {
-      //TODO: put spotify search query api here
-      if (queryInput=='t') {
-        setQueryResult(reachResult1)
-      } else if (queryInput=='f') {
-        setQueryResult(reachResult2)
+      if (dataResult != undefined && dataResult.length > 0) {
+        setQueryResult(dataResult)
       } else {
         setQueryResult([])
       }
-    }, [queryInput])
+    }, [dataResult])
+
   
     return (
       <div>

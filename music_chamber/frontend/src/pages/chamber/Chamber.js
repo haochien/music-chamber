@@ -192,7 +192,7 @@ export default function Chamber() {
         <p>Is Public Chamber: {objChamberInfo ? objChamberInfo.is_public.toString() : ''}</p>
         <p>Are You Host: {objChamberInfo ? objChamberInfo.is_host.toString() : ''}</p> */}
         <SpotifyPlayback token={accessToken} switchSdkPlaybackStatus={switchSdkPlaybackStatus} />
-        <AddSong openAddSong={openAddSong} switchOpenAddSong={switchOpenAddSong} updateSongIdsToBeAdded={updateSongIdsToBeAdded}/>
+        <AddSong token={accessToken} openAddSong={openAddSong} switchOpenAddSong={switchOpenAddSong} updateSongIdsToBeAdded={updateSongIdsToBeAdded}/>
         {
           openMusicPlayer && <Box sx={{
             display: 'flex', flexDirection: 'column', justifyContent: "center",
