@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import time
 
 from urllib import response
 from django.shortcuts import render, redirect
@@ -105,6 +106,7 @@ class GetDevices(APIView):
 
 class TransferDevice(APIView):
     def put(self, response):
+        time.sleep(3)
         response = get_user_devices(user_session=self.request.session.session_key)
         if 'Error' in response:
             return Response({response['Error_Type']: response['Error']}, status=response['Status'])
@@ -132,56 +134,101 @@ class GetPlaybackState(APIView):
         return Response(playback_state, status=status.HTTP_200_OK)
 
 
+# class ResumePlayback(APIView):
+#     serializer_class = ResumePlaybackSerializer
+
+#     def post(self, request):
+#         serializer = self.serializer_class(data=request.data)
+#         if serializer.is_valid():
+#             context_uri = constant.uri_playlist + serializer.data.get('context_uri')
+#             #uris = [uris.strip() for uris in serializer.data.get('uris').split(",")]
+#             uri = constant.uri_track + serializer.data.get('uris')
+#             offset = {"uri": uri} if len(uri) > 0 else {"position": serializer.data.get('offset')}
+#             position_ms = int(serializer.data.get('position_ms'))
+
+#             data = {"context_uri": context_uri, "offset": offset, "position_ms":position_ms}
+#             response = resume_playlist(user_session=self.request.session.session_key, data=data)
+
+#             if 'Error' in response:
+#                 return Response({response['Error_Type']: response['Error']}, status=response['Status'])
+#             else:
+#                 return Response(response, status=status.HTTP_202_ACCEPTED)
+        
+
+#         return Response({'Bad Request': 'Invalid Input. Details: ' + str(serializer.errors) }, status=status.HTTP_400_BAD_REQUEST)
+    
+#     def put(self, request):
+#         chamber_id = self.request.session['chamber_id']
+#         chamber_queryset = Chamber.objects.filter(chamber_id=chamber_id)
+#         if chamber_queryset.exists():
+#             chamber_instance = chamber_queryset[0]
+#         else:
+#             return Response({}, status=status.HTTP_404_NOT_FOUND)
+
+#         playlist_on_play, song_on_play, song_progress = self.get_song_in_chamber(chamber_instance)
+#         uri = constant.uri_track + str(song_on_play)
+#         offset = {"uri": uri} if len(uri) > 0 else {"position": 0}
+
+#         data = {"context_uri": constant.uri_playlist+str(playlist_on_play), "offset": offset, "position_ms":song_progress}
+#         response = resume_playlist(user_session=self.request.session.session_key, data=data)
+
+#         if 'Error' in response:
+#             return Response({response['Error_Type']: response['Error']}, status=response['Status'])
+#         else:
+#             return Response(response, status=status.HTTP_202_ACCEPTED)
+    
+#     def get_song_in_chamber(self, chamber_instance):
+#         playlist_on_play = chamber_instance.playlist_on_play
+#         song_on_play = chamber_instance.song_on_play
+#         song_end_at = chamber_instance.song_end_at
+#         song_duration = chamber_instance.song_duration
+#         song_progress = int(song_duration - (song_end_at - timezone.now()).total_seconds()*1000)
+#         return playlist_on_play, song_on_play, song_progress
+
 class ResumePlayback(APIView):
     serializer_class = ResumePlaybackSerializer
 
-    def post(self, request):
+    def put(self, request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            context_uri = constant.uri_playlist + serializer.data.get('context_uri')
-            #uris = [uris.strip() for uris in serializer.data.get('uris').split(",")]
-            uri = constant.uri_track + serializer.data.get('uris')
-            offset = {"uri": uri} if len(uri) > 0 else {"position": serializer.data.get('offset')}
-            position_ms = int(serializer.data.get('position_ms'))
+            host_name = ""
+            chamber_id = self.request.session['chamber_id']
+            chamber_queryset = Chamber.objects.filter(chamber_id=chamber_id)
+            
+            if len(serializer.data.get('playlist_id')):
+                playlist_on_play = serializer.data.get('playlist_id')
+            elif chamber_queryset.exists():
+                chamber_instance = chamber_queryset[0]
+                playlist_on_play = chamber_instance.playlist_on_play
+                host_name = chamber_instance.host_name
+            else:
+                return Response({}, status=status.HTTP_404_NOT_FOUND)
 
-            data = {"context_uri": context_uri, "offset": offset, "position_ms":position_ms}
+            offset_by_song_id = constant.uri_track + serializer.data.get('offset_by_song_id')
+            offset_by_song_position = serializer.data.get('offset_by_song_position')
+
+            playlist_uri = constant.uri_playlist + str(playlist_on_play)
+            offset = {"uri": offset_by_song_id} if len(serializer.data.get('offset_by_song_id')) > 0 else {"position": offset_by_song_position}
+            song_progress = serializer.data.get('position_ms')
+            data = {"context_uri": playlist_uri, "offset": offset, "position_ms":song_progress}
+
             response = resume_playlist(user_session=self.request.session.session_key, data=data)
 
             if 'Error' in response:
                 return Response({response['Error_Type']: response['Error']}, status=response['Status'])
             else:
+                # host changes is_play in model Chamber to True if song starts to be played 
+                if host_name != "" and host_name == self.request.session.session_key and not chamber_instance.is_playing:
+                    self._update_is_playing_status(chamber_queryset, is_playing=True)
+
                 return Response(response, status=status.HTTP_202_ACCEPTED)
         
-
         return Response({'Bad Request': 'Invalid Input. Details: ' + str(serializer.errors) }, status=status.HTTP_400_BAD_REQUEST)
     
-    def put(self, request):
-        chamber_id = self.request.session['chamber_id']
-        chamber_queryset = Chamber.objects.filter(chamber_id=chamber_id)
-        if chamber_queryset.exists():
-            chamber_instance = chamber_queryset[0]
-        else:
-            return Response({}, status=status.HTTP_404_NOT_FOUND)
-
-        play_list_on_play, song_on_play, song_progress = self.get_song_in_chamber(chamber_instance)
-        uri = constant.uri_track + str(song_on_play)
-        offset = {"uri": uri} if len(uri) > 0 else {"position": 0}
-
-        data = {"context_uri": constant.uri_playlist+str(play_list_on_play), "offset": offset, "position_ms":song_progress}
-        response = resume_playlist(user_session=self.request.session.session_key, data=data)
-
-        if 'Error' in response:
-            return Response({response['Error_Type']: response['Error']}, status=response['Status'])
-        else:
-            return Response(response, status=status.HTTP_202_ACCEPTED)
-    
-    def get_song_in_chamber(self, chamber_instance):
-        play_list_on_play = chamber_instance.play_list_on_play
-        song_on_play = chamber_instance.song_on_play
-        song_end_at = chamber_instance.song_end_at
-        song_duration = chamber_instance.song_duration
-        song_progress = int(song_duration - (song_end_at - timezone.now()).total_seconds()*1000)
-        return play_list_on_play, song_on_play, song_progress
+    def _update_is_playing_status(self, chamber_queryset, is_playing):
+        list_model_fields = ['is_playing']
+        list_model_values = [is_playing]
+        WorkWithModel.create_or_update_model(Chamber, list_model_fields, list_model_values, 'update', chamber_queryset)
 
 
 
@@ -195,12 +242,13 @@ class GetSongOnPlay(APIView):
         else:
             return Response({}, status=status.HTTP_404_NOT_FOUND)
 
-        host_name = chamber_instance.host_name  #TODO: should this function be only available to host?
-        dict_song_info = get_song_on_play(user_session=host_name)
+        host_name = chamber_instance.host_name
+        dict_song_info = get_song_on_play(user_session=self.request.session.session_key)
 
         if 'Error' in dict_song_info:
             return Response({dict_song_info['Error_Type']: dict_song_info['Error']}, status=dict_song_info['Status'])
-        else:
+        
+        if host_name == self.request.session.session_key:
             dict_song_info['votes'] = 0
             self.store_song_info(chamber_queryset, dict_song_info['id'], dict_song_info['duration'], dict_song_info['time'])
 
@@ -319,7 +367,7 @@ class CreatePlaylist(APIView):
             return Response(response, status=status.HTTP_201_CREATED)
 
     def store_playlist_info(self, chamber_queryset, playlist_id):
-        list_model_fields = ['play_list_on_play']
+        list_model_fields = ['playlist_on_play']
         list_model_values = [playlist_id]
         WorkWithModel.create_or_update_model(Chamber, list_model_fields, list_model_values, 'update', chamber_queryset)
 

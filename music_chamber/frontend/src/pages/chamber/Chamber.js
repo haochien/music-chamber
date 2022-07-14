@@ -36,6 +36,7 @@ export default function Chamber() {
   const [isPlay, setIsPlay] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isSkip, setIsSkip] = useState(false);
+  const [isChamberStartPlay, setIsChamberStartPlay] = useState(false);
   
   const requestOption = (jsonData) =>{
     const optionData = {
@@ -64,7 +65,19 @@ export default function Chamber() {
   };
 
 
-  const togglePlay = () => { if (isPlay) {setIsPlay(false)} else {setIsPlay(true)} }
+  const togglePlay = () => {
+    if (isChamberStartPlay) {
+      if (isPlay) {setIsPlay(false)} else {setIsPlay(true)}
+    } else {
+      if (objChamberInfo.is_host) {
+        resumePlayback("", 0, 0)
+      }  else {
+        //TODO: change here to MsgBar
+        console.log('The host does not start to play music yet. Please wait for a while.')
+      }
+    }
+    
+  } 
   const toggleFavorite = () => { if (isFavorite) {setIsFavorite(false)} else {setIsFavorite(true)} }
   const toggleSkip = () => { if (isSkip) {setIsSkip(false)} else {setIsSkip(true)} }
 
@@ -97,16 +110,29 @@ export default function Chamber() {
 
   }
 
-  const resumePlayback = async () => {
+  const resumePlayback = async (songID, songPosition, positionMs) => {
     console.log('start resume song. palylist id: ', playlistId)
-    // const dataResumeSong = {
-    //   context_uri: playlistId,
-    // };
-    // const jsonResumeSong = JSON.stringify(dataResumeSong, null, '')
+    const dataResumeSong = {
+      playlist_id: "",
+      offset_by_song_id: songID,
+      offset_by_song_position:songPosition,
+      position_ms: positionMs,
+    };
+    const jsonResumeSong = JSON.stringify(dataResumeSong, null, '')
+    console.log('jsonResumeSong: ', jsonResumeSong)
 
-    const res = await fetch("/api-spotify/resume-playback", requestOption(''))
+    const res = await fetch("/api-spotify/resume-playback", requestOption(jsonResumeSong))
     const data = await res.json()
-    console.log('song resumed. details: ', data)
+    if (!res.ok) {
+      console.log('error in res of resumePlayback!!!')
+      throw new Error(res.statusText)
+    } else {
+      setIsChamberStartPlay(true)
+      setIsPlay(true)
+    }
+
+    console.log('song resumed. data: ', data)
+    
   }
 
 
@@ -145,7 +171,8 @@ export default function Chamber() {
       createPlaylist()
     } else if (isSdkPlaybackOn && !objChamberInfo.is_host) {
       console.log('guest start resumePlayback function...')
-      resumePlayback()
+      //TODO: update resumePlayback function for guest
+      //resumePlayback()
     }
   }, [isSdkPlaybackOn])
 
@@ -166,17 +193,6 @@ export default function Chamber() {
       setOpenMusicPlayer(true)
     }
   }, [songIdsToBeAdded])
-
-
-  useEffect( async () => {
-    // start play song once host has finished the add song process
-    if (openMusicPlayer) {
-      await resumePlayback()
-      setIsPlay(true)
-    } 
-  }, [openMusicPlayer])
-
-
 
 
   //useEffect(() => console.log(userAuthStatus), [userAuthStatus]);
