@@ -81,9 +81,15 @@ const translatePopularity = (popularityValue) => {
 }
 
 
+const msToSongTime = (ms) => {
+  var pad = (n, z) => ('00' + n).slice(-z);
+  return pad((ms%3.6e6)/6e4|0, 1) + ':' + pad((ms%6e4)/1000|0, 2);
+}
+
+
 export default function MusicPlayer({song_name, song_singer, durationInMs, song_energy, song_danceability, song_happiness, 
-  song_acousticness, song_speechiness, song_popularity, song_tempo,
-  isPlay, togglePlay, isFavorite, toggleFavorite, isSkip, toggleSkip}) {
+  song_acousticness, song_speechiness, song_popularity, song_tempo, song_image_url,
+  isPlay, togglePlay, isFavorite, toggleFavorite, isSkip, toggleSkip, isChamberStartPlay}) {
 
   const [progress, setProgress] = useState(0);
   const [expanded, setExpanded] = useState(false);
@@ -119,20 +125,23 @@ export default function MusicPlayer({song_name, song_singer, durationInMs, song_
 
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setProgress((oldProgress) => {
-        if (oldProgress === 1) {
-          clearInterval(timer);
-          return 0;
-        }
-        return Math.min((oldProgress * durationInMs  + 1000)/durationInMs, 1);
-      });
-    }, 1000);
-  
-    return () => {
-      clearInterval(timer);
-    };
-  }, [durationInMs]);
+    if (isChamberStartPlay) {
+      const timer = setInterval(() => {
+        setProgress((oldProgress) => {
+          if (oldProgress === 1) {
+            //setDurationInMs(durationInMs + 3000)
+          }
+          return Math.min((oldProgress * durationInMs + 1000)/durationInMs, 1);
+        });
+      }, 1000);
+    
+      return () => {
+        setProgress(0)
+        clearInterval(timer);
+      };
+    }
+
+  }, [durationInMs, isChamberStartPlay]);
 
 
   useEffect(() => {
@@ -159,22 +168,30 @@ export default function MusicPlayer({song_name, song_singer, durationInMs, song_
       </Box>
     </Box>
 
-    <Card sx={{ maxWidth: 450, minHeight: 450, borderRadius:3, background: 'linear-gradient(to right top, #86a8e7, #97b4ec, #a7c0f0, #b7ccf5, #c7d8f9, #c7d8f9, #c7d8f9, #c7d8f9, #b7ccf5, #a7c0f0, #97b4ec, #86a8e7)'}}>
+    <Card sx={{ boxShadow: "25", maxWidth: 450, minHeight: 450, borderRadius:3, background: 'linear-gradient(to right top, #86a8e7, #97b4ec, #a7c0f0, #b7ccf5, #c7d8f9, #c7d8f9, #c7d8f9, #c7d8f9, #b7ccf5, #a7c0f0, #97b4ec, #86a8e7)'}}>
       <CardMedia
         component="img"
         alt="track image"
-        image="https://i.scdn.co/image/ab67616d0000b273ba02e4c2026b51da26aa58bb"
+        image={song_image_url}
         sx={{p:2, borderRadius:8, height:420}}
       />
       
       <CardContent>
-        <Typography variant="h3" color="text.secondary" component="div" align='center' sx={{fontSize: 15, mb: 2}}>
+        <Typography variant="h3" color="text.secondary" component="div" align='center' sx={{fontSize: 15, mb: 2, textShadow: "2px 2px 5px rgba(0, 0, 0, 0.20)"}}>
           {song_singer}
         </Typography>
-        <Typography variant="h3" color="primary.main" align='center' sx={{fontSize: 35, mb: 4}}>
+        <Typography variant="h3" color="primary.main" align='center' sx={{fontSize: 35, mb: 4, textShadow: "2px 2px 5px rgba(0, 0, 0, 0.20)"}}>
           {song_name}
         </Typography>
-        <LinearProgress variant="determinate" value={progress * 100} sx={{ml: 1, mr: 1, mb:2}}/>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', mb:1}}>
+          <Box sx={{ width: '100%', ml: 1, mr: 2}}>
+            <LinearProgress variant="determinate" value={progress * 100}/>
+          </Box>
+          <Box sx={{ minWidth: 37 }}>
+            <Typography variant="body2" color="text.secondary">{msToSongTime(durationInMs)}</Typography>
+          </Box>
+        </Box>
       </CardContent>
 
       <CardActions disableSpacing>

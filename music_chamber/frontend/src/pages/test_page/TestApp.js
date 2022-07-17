@@ -8,7 +8,7 @@ export default function TestApp() {
   const song_info = {
     song_name:'Those Eyes', song_singer:'New West', durationInMs:180000, song_energy:0.842, 
     song_danceability:0.842, song_happiness:0.842, song_acousticness:0.142,
-    song_speechiness:0.0556, song_popularity:72, song_tempo:118.211
+    song_speechiness:0.0556, song_popularity:72, song_tempo:118.211, song_image_url:'https://i.scdn.co/image/ab67616d0000b273ba02e4c2026b51da26aa58bb'
   }
                      
   const [isPlay, setIsPlay] = useState(false);

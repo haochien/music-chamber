@@ -16,7 +16,8 @@ class Chamber(models.Model):
     song_on_play = models.CharField(max_length=50, null=True, blank=True)
     song_duration = models.IntegerField(null=True, blank=True)
     song_end_at = models.DateTimeField(null=True, blank=True)
-    play_list_on_play = models.CharField(max_length=50, null=True, blank=True)
+    playlist_on_play = models.CharField(max_length=50, null=True, blank=True)
+    is_playing = models.BooleanField(default=False)
 
     def __str__(self):
         return str(self.chamber_name)

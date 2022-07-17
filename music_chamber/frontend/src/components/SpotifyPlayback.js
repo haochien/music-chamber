@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSession } from '../hooks/useSession';
 
-export default function SpotifyPlayback({ token, switchSdkPlaybackStatus}) {
+export default function SpotifyPlayback({ token, switchSdkPlaybackStatus, switchSongHasChangedStatus}) {
   
   const track = {
     name: "",
@@ -102,8 +102,19 @@ export default function SpotifyPlayback({ token, switchSdkPlaybackStatus}) {
             setActive(true) 
             setTrack(state.track_window.current_track);
             setPaused(state.paused);
-            setCurrentSongID(state.track_window.current_track.id)
-            console.log(state)
+            //console.log(state)
+            //console.log('### Player SDK: current paused status: ', state.paused)
+            //console.log('### Player SDK: current song: ', state.track_window.current_track)
+            
+            if (state.paused === false && currentSongID === '') {
+              //console.log('### Player SDK: setCurrentSongID to', state.track_window.current_track.name)
+              setCurrentSongID(state.track_window.current_track.id)
+            }
+
+            if (state.paused === false && state.track_window.current_track.id !== currentSongID) {
+              //console.log('### Player SDK: switchSongHasChangedStatus to true')
+              switchSongHasChangedStatus(true)
+            }
 
             // player.getCurrentState().then( state => { 
             //     (!state) ? setActive(false) : setActive(true) 
