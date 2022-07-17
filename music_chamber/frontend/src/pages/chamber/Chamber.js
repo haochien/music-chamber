@@ -10,11 +10,11 @@ import MusicPlayer from '../../components/MusicPlayer'
 // styles
 import './Chamber.css'
 
-const song_info = {
-  song_name:'Those Eyes', song_singer:'New West', durationInMs:180000, song_energy:0.842, 
-  song_danceability:0.842, song_happiness:0.842, song_acousticness:0.142,
-  song_speechiness:0.0556, song_popularity:72, song_tempo:118.211
-}
+// const songInfo = {
+//   song_name:'Those Eyes', song_singer:'New West', durationInMs:180000, song_energy:0.842, 
+//   song_danceability:0.842, song_happiness:0.842, song_acousticness:0.142,
+//   song_speechiness:0.0556, song_popularity:72, song_tempo:118.211, song_image_url:'https://i.scdn.co/image/ab67616d0000b273ba02e4c2026b51da26aa58bb'
+// }
 
 export default function Chamber() {
 
@@ -37,10 +37,12 @@ export default function Chamber() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [isSkip, setIsSkip] = useState(false);
   const [isChamberStartPlay, setIsChamberStartPlay] = useState(false);
+
+  const [songInfo, setSongInfo] = useState({})
   
-  const requestOption = (jsonData) =>{
+  const requestOption = (jsonData, requestType) =>{
     const optionData = {
-      method: "PUT",
+      method: requestType,
       headers: {
         'Content-Type': 'application/json',
         'X-CSRFToken': csrftoken,
@@ -84,7 +86,7 @@ export default function Chamber() {
 
   const createPlaylist = async () => {
     console.log('start creating playlist...')
-    const res = await fetch("/api-spotify/create-playlist", {method: "PUT", headers: {'X-CSRFToken': csrftoken}})
+    const res = await fetch("/api-spotify/create-playlist", {method: "POST", headers: {'X-CSRFToken': csrftoken}})
     const data = await res.json()
     setPlaylistId(data.id)
     console.log('playlist created. playlist_id:', data.id)
@@ -92,7 +94,7 @@ export default function Chamber() {
 
 
   const addSong = async () => {
-    console.log('start adding song. song id: ', playlistId)
+    console.log('start adding song. playlist id: ', playlistId)
 
     if (playlistId && songIdsToBeAdded.length>0) {
       const dataAddSong = {
@@ -101,7 +103,7 @@ export default function Chamber() {
       };
       const jsonAddSong = JSON.stringify(dataAddSong, null, '')
 
-      const res = await fetch("/api-spotify/playlist-add-item", requestOption(jsonAddSong))
+      const res = await fetch("/api-spotify/playlist-add-item", requestOption(jsonAddSong, 'POST'))
       const data = await res.json()
 
       console.log("song added. add_song_sanp: ", data)
@@ -109,6 +111,19 @@ export default function Chamber() {
     }
 
   }
+
+
+  const getSongIngoById = async (song_id) => {
+    console.log('start get song info by id. song id: ', song_id)
+    const res = await fetch('/api-spotify/get-song-info?song_id=' + song_id)
+    console.log("res of getSongIngoById: ", res)
+    const data = await res.json()
+    console.log("end get song info by id. song info: ", data)
+
+    setSongInfo(data)
+  }
+
+
 
   const resumePlayback = async (songID, songPosition, positionMs) => {
     console.log('start resume song. palylist id: ', playlistId)
@@ -121,7 +136,7 @@ export default function Chamber() {
     const jsonResumeSong = JSON.stringify(dataResumeSong, null, '')
     console.log('jsonResumeSong: ', jsonResumeSong)
 
-    const res = await fetch("/api-spotify/resume-playback", requestOption(jsonResumeSong))
+    const res = await fetch("/api-spotify/resume-playback", requestOption(jsonResumeSong, 'PUT'))
     const data = await res.json()
     if (!res.ok) {
       console.log('error in res of resumePlayback!!!')
@@ -129,6 +144,7 @@ export default function Chamber() {
     } else {
       setIsChamberStartPlay(true)
       setIsPlay(true)
+      //TODO: if host, then call GetSongOnPlay api?
     }
 
     console.log('song resumed. data: ', data)
@@ -190,6 +206,7 @@ export default function Chamber() {
     if (songIdsToBeAdded.length>0) {
       console.log('I am going to add the song')
       await addSong()
+      await getSongIngoById(songIdsToBeAdded[0])
       setOpenMusicPlayer(true)
     }
   }, [songIdsToBeAdded])
@@ -214,7 +231,7 @@ export default function Chamber() {
             display: 'flex', flexDirection: 'column', justifyContent: "center",
             alignItems: 'center', minHeight: '100vh',
           }}>
-            <MusicPlayer {...song_info} isPlay={isPlay} togglePlay={togglePlay} 
+            <MusicPlayer {...songInfo} isPlay={isPlay} togglePlay={togglePlay} 
                          isFavorite={isFavorite} toggleFavorite={toggleFavorite} isSkip={isSkip} toggleSkip={toggleSkip}/>
           </Box>
         }

@@ -57,7 +57,6 @@ export default function AddSong({ token, openAddSong, switchOpenAddSong, updateS
     const confirmAddSong = (event, reason) => {
       if (songList.length > 0) {
          let arraySongId = songList.map(songObj => songObj.id)
-         console.log(arraySongId)
          updateSongIdsToBeAdded(arraySongId)
          handleClose(event, reason)
       } else {
@@ -94,7 +93,6 @@ export default function AddSong({ token, openAddSong, switchOpenAddSong, updateS
                 open={openSongSearchList}
                 onClose={() => setOpenSongSearchList(false)}
                 onChange={(event, newValue) => {
-                  console.log('song selected: ', newValue)
                   if (newValue != null && newValue.hasOwnProperty('title')) {
                     addToPendingList(newValue)
                   }
@@ -139,7 +137,6 @@ export default function AddSong({ token, openAddSong, switchOpenAddSong, updateS
                   const listItemId = `list-item-${index}`;
                   const labelId = `list-content-${index}`;
                   const dividerId = `list-divider-${index}`;
-                  console.log('currrent song list: ', songList)
 
                   return(
                     <div key={index}>

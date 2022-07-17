@@ -129,33 +129,73 @@ def breakdown_track_dict(response, only_id=False):
     if only_id:
         return {'id': song_id}
 
-    title = item.get('name')
-    duration = item.get('duration_ms')
+    title = item.get('name') if 'name' in item else ""
+    duration = item.get('duration_ms') if 'duration_ms' in item else ""
     album_cover = item.get('album').get('images')[0].get('url')
-    popularity = item.get('popularity')
-    uri = item.get('uri')
+    popularity = item.get('popularity') if 'popularity' in item else ""
+    uri = item.get('uri') if 'uri' in item else ""
     progress = response.get('progress_ms') if 'progress_ms' in response else 0
     is_playing = response.get('is_playing') if 'is_playing' in response else ""
 
     artist_string = ""
     for i, artist in enumerate(item.get('artists')):
         artist_string  = artist_string + ", " + artist.get('name') if i > 0 else artist.get('name')
+
+    # song feature part
+    song_energy = response.get('energy') if 'energy' in response else ""
+    song_danceability = response.get('danceability') if 'danceability' in response else ""
+    song_happiness = response.get('valence') if 'valence' in response else ""
+    song_acousticness = response.get('acousticness') if 'acousticness' in response else ""
+    song_speechiness = response.get('speechiness') if 'speechiness' in response else ""
+    song_tempo = response.get('tempo') if 'tempo' in response else ""
     
-    return {'id': song_id, 'title': title, 'artist': artist_string, 'duration': duration, 
-            'time': progress, 'image_url': album_cover, 'popularity':popularity,
-            'uri': uri, 'is_playing': is_playing}
+    return {'id': song_id, 'song_name': title, 'song_singer': artist_string, 'durationInMs': duration, 
+            'progressMs': progress, 'song_image_url': album_cover, 'song_popularity':popularity,
+            'uri': uri, 'is_playing': is_playing,
+            'song_energy': song_energy, 'song_danceability': song_danceability, 'song_happiness': song_happiness, 
+            'song_acousticness': song_acousticness, 'song_speechiness': song_speechiness, 'song_tempo': song_tempo}
+
+
+
+def get_song_feature_by_id(user_session, song_id):
+    response = spotify_web_api_operator(user_session=user_session, endpoint=constant.song_feature.format(id=song_id))
+    dict_error = check_error_in_response(response)
+    if dict_error is None:
+        return response
+
+    print(f"Cannot get feature. Details: {dict_error}")
+    return {}
 
 
 def get_song_on_play(user_session):
-    response = spotify_web_api_operator(user_session=user_session, endpoint=constant.currently_playing)
-    dict_error = check_error_in_response(response, 'item')
-    return breakdown_track_dict(response) if dict_error is None else dict_error
+    dict_song_info = spotify_web_api_operator(user_session=user_session, endpoint=constant.currently_playing)
+    dict_error = check_error_in_response(dict_song_info, 'item')
+
+    song_id = dict_song_info.get('item').get('id')
+    dict_song_feature = get_song_feature_by_id(user_session, song_id)
+
+    if dict_error is not None:
+        return dict_error
+    elif len(dict_song_feature) > 0:
+        response = {**dict_song_feature, **dict_song_info}
+        return breakdown_track_dict(response)
+    else:
+        return breakdown_track_dict(dict_song_info)
 
 
 def get_song_info_by_id(user_session, song_id):
-    response = spotify_web_api_operator(user_session=user_session, endpoint=constant.song_info.format(id=song_id))
-    dict_error = check_error_in_response(response)
-    return breakdown_track_dict(response) if dict_error is None else dict_error
+    dict_song_info = spotify_web_api_operator(user_session=user_session, endpoint=constant.song_info.format(id=song_id))
+    dict_error = check_error_in_response(dict_song_info)
+
+    dict_song_feature = get_song_feature_by_id(user_session, song_id)
+
+    if dict_error is not None:
+        return dict_error
+    elif len(dict_song_feature) > 0:
+        response = {**dict_song_feature, **dict_song_info}
+        return breakdown_track_dict(response)
+    else:
+        return breakdown_track_dict(dict_song_info)
 
 
 def get_my_playlist(user_session):

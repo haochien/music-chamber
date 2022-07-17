@@ -2,8 +2,8 @@ from rest_framework import serializers
 
 
 class CreatePlaylistSerializer(serializers.Serializer):
-    name = serializers.CharField(max_length=50)
-    description = serializers.CharField(max_length=200, default="")
+    name = serializers.CharField(max_length=50, allow_blank=True, default="")
+    description = serializers.CharField(max_length=200, allow_blank=True, default="")
 
 
 class PlaylistAddItemSerializer(serializers.Serializer):
