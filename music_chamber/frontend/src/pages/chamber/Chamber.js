@@ -257,7 +257,8 @@ export default function Chamber() {
         {
           openMusicPlayer && <Box sx={{
             display: 'flex', flexDirection: 'column', justifyContent: "center",
-            alignItems: 'center', minHeight: '100vh',
+            alignItems: 'center', minHeight: '85vh',
+            mx: '20px', mb:'50px', mt:'20px'
           }}>
             <MusicPlayer {...songInfo} isPlay={isPlay} togglePlay={togglePlay} 
                          isFavorite={isFavorite} toggleFavorite={toggleFavorite} isSkip={isSkip} toggleSkip={toggleSkip} 
