@@ -1,6 +1,7 @@
 import {useEffect, useState} from 'react';
 import { useSession } from '../hooks/useSession';
 import { styled } from '@mui/material/styles';
+import * as customSyle from '../constants/cssStyle';
 import Card from '@mui/material/Card';
 import CardActions from '@mui/material/CardActions';
 import CardContent from '@mui/material/CardContent';
@@ -168,7 +169,7 @@ export default function MusicPlayer({song_name, song_singer, durationInMs, song_
       </Box>
     </Box>
 
-    <Card sx={{ boxShadow: "25", maxWidth: 450, minHeight: 450, borderRadius:3, background: 'linear-gradient(to right top, #86a8e7, #97b4ec, #a7c0f0, #b7ccf5, #c7d8f9, #c7d8f9, #c7d8f9, #c7d8f9, #b7ccf5, #a7c0f0, #97b4ec, #86a8e7)'}}>
+    <Card sx={{ boxShadow: "25", maxWidth: 450, minHeight: 450, borderRadius:3, background: customSyle.csBgGradient.lightBlue}}>
       <CardMedia
         component="img"
         alt="track image"
@@ -177,10 +178,10 @@ export default function MusicPlayer({song_name, song_singer, durationInMs, song_
       />
       
       <CardContent>
-        <Typography variant="h3" color="text.secondary" component="div" align='center' sx={{fontSize: 15, mb: 2, textShadow: "2px 2px 5px rgba(0, 0, 0, 0.20)"}}>
+        <Typography variant="h3" color="text.secondary" component="div" align='center' sx={{fontSize: 15, mb: 2, textShadow: customSyle.csTextShadow.black1}}>
           {song_singer}
         </Typography>
-        <Typography variant="h3" color="primary.main" align='center' sx={{fontSize: 35, mb: 4, textShadow: "2px 2px 5px rgba(0, 0, 0, 0.20)"}}>
+        <Typography variant="h3" color="primary.main" align='center' sx={{fontSize: 35, mb: 4, textShadow: customSyle.csTextShadow.black1}}>
           {song_name}
         </Typography>
 

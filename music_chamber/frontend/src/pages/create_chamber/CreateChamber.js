@@ -2,6 +2,7 @@ import {useState} from 'react';
 import { Avatar, Button, TextField, FormControl,
   FormGroup, FormLabel, FormControlLabel, Switch,
   Grid, Box, Typography, Container } from '@mui/material'
+import * as customSyle from '../../constants/cssStyle';
 import MusicNote from '@mui/icons-material/MusicNote';
 import { useNavigate } from 'react-router-dom';
 import { useSession } from '../../hooks/useSession';
@@ -50,13 +51,13 @@ export default function CreateChamber() {
     <Container component="main" maxWidth="xs">
       <Box
         sx={{
-          marginTop: 8,
+          mx: '5px', mb:'80px', mt:'80px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           border: '1px solid white',
           borderRadius: '25px',
-          bgcolor: 'secondary.main',
+          background: customSyle.csBgGradient.lightBlue,
           padding: 4,
         }}
       >
@@ -64,7 +65,7 @@ export default function CreateChamber() {
           <MusicNote />
         </Avatar>
 
-        <Typography component="h1" variant="h5">
+        <Typography component="h1" variant="h6" >
           Create Your Music Chamber
         </Typography>
 
@@ -137,13 +138,13 @@ export default function CreateChamber() {
 
           </Grid>
 
-          <Grid container spacing={2}>
+          <Grid container spacing={2} sx={{ mt: 2, mb: 2 }}>
             <Grid item xs={12} sm={6}>
               <Button
                 type="submit"
                 fullWidth
                 variant="contained"
-                sx={{ mt: 3, mb: 2, bgcolor:'primary.main', '&:hover': {bgcolor:'primary.dark'} }}
+                sx={{ bgcolor:'primary.main', '&:hover': {bgcolor:'primary.dark'} }}
               >
                 Create
               </Button>
@@ -154,7 +155,7 @@ export default function CreateChamber() {
                 type="submit"
                 fullWidth
                 variant="contained"
-                sx={{ mt: 3, mb: 2, bgcolor:'primary.main', '&:hover': {bgcolor:'primary.dark'} }}
+                sx={{ bgcolor:'primary.main', '&:hover': {bgcolor:'primary.dark'} }}
               >
                 Leave
               </Button>

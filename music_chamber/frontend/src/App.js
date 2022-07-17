@@ -4,6 +4,7 @@ import { theme } from './theme';
 import { CssBaseline } from '@mui/material';
 
 // page components
+import Navbar from './components/Navbar'
 import Home from './pages/home/Home'
 import CreateChamber from './pages/create_chamber/CreateChamber'
 import Chamber from './pages/chamber/Chamber'
@@ -18,6 +19,7 @@ function App() {
       <CssBaseline />
       <div>
         <BrowserRouter>
+        <Navbar />
           <Routes>
             <Route path="/" element={<Home />}/>
             <Route path="/create-chamber" element={<CreateChamber />}/>

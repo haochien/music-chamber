@@ -25,7 +25,8 @@ export default function TestApp() {
       flexDirection: 'column',
       justifyContent: "center",
       alignItems: 'center',
-      minHeight: '100vh',
+      minHeight: '85vh',
+      mx: '20px', mb:'50px', mt:'20px'
     }}>
       <TestPage {...song_info} isPlay={isPlay} togglePlay={togglePlay} isFavorite={isFavorite} toggleFavorite={toggleFavorite} isSkip={isSkip} toggleSkip={toggleSkip}/>
     </Box>
