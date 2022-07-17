@@ -28,6 +28,7 @@ export default function Chamber() {
 
   const [playlistId, setPlaylistId] = useState('')
   const [isSdkPlaybackOn, setIsSdkPlaybackOn] = useState(false)
+  const [songHasChanged, setSongHasChanged] = useState(false)
 
   const [openAddSong, setOpenAddSong] = useState(false);
   const [songIdsToBeAdded, setSongIdsToBeAdded] = useState([]);
@@ -56,6 +57,11 @@ export default function Chamber() {
   const switchSdkPlaybackStatus = (trueOrFalse) => {
     console.log('changing sdk playback status to: ', trueOrFalse)
     setIsSdkPlaybackOn(trueOrFalse)
+  };
+
+  const switchSongHasChangedStatus = (trueOrFalse) => {
+    console.log('changing setSongHasChanged status to: ', trueOrFalse)
+    setSongHasChanged(trueOrFalse)
   };
 
   const switchOpenAddSong = (trueOrFalse) => {
@@ -116,13 +122,11 @@ export default function Chamber() {
   const getSongIngoById = async (song_id) => {
     console.log('start get song info by id. song id: ', song_id)
     const res = await fetch('/api-spotify/get-song-info?song_id=' + song_id)
-    console.log("res of getSongIngoById: ", res)
     const data = await res.json()
     console.log("end get song info by id. song info: ", data)
 
     setSongInfo(data)
   }
-
 
 
   const resumePlayback = async (songID, songPosition, positionMs) => {
@@ -144,10 +148,23 @@ export default function Chamber() {
     } else {
       setIsChamberStartPlay(true)
       setIsPlay(true)
-      //TODO: if host, then call GetSongOnPlay api?
     }
 
     console.log('song resumed. data: ', data)
+    
+  }
+
+
+  const getSongOnPlay = async () => {
+    console.log('start get current song...')
+    const res = await fetch('/api-spotify/get-song-on-play')
+    const data = await res.json()
+    console.log("end get current song. song info: ", data)
+
+    if (data.is_playing) {
+      //only update song on play info when this song is on play (to prevent first non-play song)
+      setSongInfo(data)
+    }
     
   }
 
@@ -212,6 +229,16 @@ export default function Chamber() {
   }, [songIdsToBeAdded])
 
 
+  useEffect( async () => {
+    // fetch current song info when song change
+    if (songHasChanged) {
+      console.log('Song has changed. Fetching current song info...')
+      await getSongOnPlay()
+      setSongHasChanged(false)
+    }
+  }, [songHasChanged])
+
+
   //useEffect(() => console.log(userAuthStatus), [userAuthStatus]);
 
 
@@ -224,7 +251,8 @@ export default function Chamber() {
         <p>Chamber Created at: {objChamberInfo ? objChamberInfo.created_at : ''}</p>
         <p>Is Public Chamber: {objChamberInfo ? objChamberInfo.is_public.toString() : ''}</p>
         <p>Are You Host: {objChamberInfo ? objChamberInfo.is_host.toString() : ''}</p> */}
-        <SpotifyPlayback token={accessToken} switchSdkPlaybackStatus={switchSdkPlaybackStatus} />
+        <SpotifyPlayback token={accessToken} switchSdkPlaybackStatus={switchSdkPlaybackStatus}
+                         switchSongHasChangedStatus={switchSongHasChangedStatus}/>
         <AddSong token={accessToken} openAddSong={openAddSong} switchOpenAddSong={switchOpenAddSong} updateSongIdsToBeAdded={updateSongIdsToBeAdded}/>
         {
           openMusicPlayer && <Box sx={{
@@ -232,7 +260,8 @@ export default function Chamber() {
             alignItems: 'center', minHeight: '100vh',
           }}>
             <MusicPlayer {...songInfo} isPlay={isPlay} togglePlay={togglePlay} 
-                         isFavorite={isFavorite} toggleFavorite={toggleFavorite} isSkip={isSkip} toggleSkip={toggleSkip}/>
+                         isFavorite={isFavorite} toggleFavorite={toggleFavorite} isSkip={isSkip} toggleSkip={toggleSkip} 
+                         isChamberStartPlay={isChamberStartPlay}/>
           </Box>
         }
         

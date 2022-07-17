@@ -106,7 +106,7 @@ class GetDevices(APIView):
 
 class TransferDevice(APIView):
     def put(self, response):
-        time.sleep(3)
+        time.sleep(5)
         response = get_user_devices(user_session=self.request.session.session_key)
         if 'Error' in response:
             return Response({response['Error_Type']: response['Error']}, status=response['Status'])

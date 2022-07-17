@@ -89,7 +89,7 @@ const msToSongTime = (ms) => {
 
 export default function MusicPlayer({song_name, song_singer, durationInMs, song_energy, song_danceability, song_happiness, 
   song_acousticness, song_speechiness, song_popularity, song_tempo, song_image_url,
-  isPlay, togglePlay, isFavorite, toggleFavorite, isSkip, toggleSkip}) {
+  isPlay, togglePlay, isFavorite, toggleFavorite, isSkip, toggleSkip, isChamberStartPlay}) {
 
   const [progress, setProgress] = useState(0);
   const [expanded, setExpanded] = useState(false);
@@ -125,20 +125,23 @@ export default function MusicPlayer({song_name, song_singer, durationInMs, song_
 
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setProgress((oldProgress) => {
-        if (oldProgress === 1) {
-          //setDurationInMs(durationInMs + 3000)
-        }
-        return Math.min((oldProgress * durationInMs + 1000)/durationInMs, 1);
-      });
-    }, 1000);
-  
-    return () => {
-      setProgress(0)
-      clearInterval(timer);
-    };
-  }, [durationInMs]);
+    if (isChamberStartPlay) {
+      const timer = setInterval(() => {
+        setProgress((oldProgress) => {
+          if (oldProgress === 1) {
+            //setDurationInMs(durationInMs + 3000)
+          }
+          return Math.min((oldProgress * durationInMs + 1000)/durationInMs, 1);
+        });
+      }, 1000);
+    
+      return () => {
+        setProgress(0)
+        clearInterval(timer);
+      };
+    }
+
+  }, [durationInMs, isChamberStartPlay]);
 
 
   useEffect(() => {
