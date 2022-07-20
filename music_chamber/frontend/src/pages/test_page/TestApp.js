@@ -1,4 +1,5 @@
-import {useEffect, useState} from 'react'
+import {useEffect, useState, Fragment} from 'react'
+import ChamberDrawer from '../../components/ChamberDrawer'
 import { Box } from '@mui/material'
 import React from 'react'
 import TestPage from './TestPage'
@@ -15,21 +16,48 @@ export default function TestApp() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [isSkip, setIsSkip] = useState(false);
 
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedComponent, setSelectedComponent] = useState('player')
+
   const togglePlay = () => { if (isPlay) {setIsPlay(false)} else {setIsPlay(true)} }
   const toggleFavorite = () => { if (isFavorite) {setIsFavorite(false)} else {setIsFavorite(true)} }
   const toggleSkip = () => { if (isSkip) {setIsSkip(false)} else {setIsSkip(true)} }
 
+  const switchIsDrawerOpen = () => {if (isDrawerOpen) {setIsDrawerOpen(false)} else {setIsDrawerOpen(true)}} 
+  const switchSelectedComponent = (seletion) => {setSelectedComponent(seletion)}
+
   return (
-    <Box sx={{
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: "center",
-      alignItems: 'center',
-      minHeight: '85vh',
-      mx: '20px', mb:'50px', mt:'20px'
-    }}>
-      <TestPage {...song_info} isPlay={isPlay} togglePlay={togglePlay} isFavorite={isFavorite} toggleFavorite={toggleFavorite} isSkip={isSkip} toggleSkip={toggleSkip}/>
-    </Box>
+    <Fragment>
+    {(selectedComponent === 'player') &&
+      <Box sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: "center",
+        alignItems: 'center',
+        minHeight: '85vh',
+        mx: '20px', mb:'50px', mt:'20px'
+      }}>
+        <TestPage {...song_info} isPlay={isPlay} togglePlay={togglePlay} isFavorite={isFavorite} toggleFavorite={toggleFavorite} isSkip={isSkip} toggleSkip={toggleSkip} switchIsDrawerOpen={switchIsDrawerOpen}/>
+      </Box>
+    }
+
+    {/* // TODO: remove this part after all component ui are ready */}
+    {(selectedComponent !== 'player') &&
+      <Box sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: "center",
+        alignItems: 'center',
+        minHeight: '85vh',
+        mx: '20px', mb:'50px', mt:'20px'
+      }}>
+        <TestPage {...song_info} isPlay={isPlay} togglePlay={togglePlay} isFavorite={isFavorite} toggleFavorite={toggleFavorite} isSkip={isSkip} toggleSkip={toggleSkip} switchIsDrawerOpen={switchIsDrawerOpen}/>
+      </Box>
+    }
+    
+    <ChamberDrawer anchor='right' isDrawerOpen={isDrawerOpen} switchIsDrawerOpen={switchIsDrawerOpen} switchSelectedComponent={switchSelectedComponent}/>
+    </Fragment>
+    
       
   )
 }

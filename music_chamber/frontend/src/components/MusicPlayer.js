@@ -20,6 +20,8 @@ import PersonIcon from '@mui/icons-material/Person';
 import LinearProgress from '@mui/material/LinearProgress';
 import Collapse from '@mui/material/Collapse';
 import Box from '@mui/material/Box';
+import Grid from '@mui/material/Grid';
+import ViewListRoundedIcon from '@mui/icons-material/ViewListRounded';
 
 
 
@@ -90,7 +92,7 @@ const msToSongTime = (ms) => {
 
 export default function MusicPlayer({song_name, song_singer, durationInMs, song_energy, song_danceability, song_happiness, 
   song_acousticness, song_speechiness, song_popularity, song_tempo, song_image_url,
-  isPlay, togglePlay, isFavorite, toggleFavorite, isSkip, toggleSkip, isChamberStartPlay}) {
+  isPlay, togglePlay, isFavorite, toggleFavorite, isSkip, toggleSkip, isChamberStartPlay, switchIsDrawerOpen}) {
 
   const [progress, setProgress] = useState(0);
   const [expanded, setExpanded] = useState(false);
@@ -158,16 +160,23 @@ export default function MusicPlayer({song_name, song_singer, durationInMs, song_
 
     <div>
 
-    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'right', maxWidth: 450, mr: 1}}>
-      <Box>
-        <PersonIcon color="primary" sx={{ fontSize: 30 }}/>
-      </Box>
-      <Box>
-        <Typography variant="body2" color="primary">
-          Votes To Skip: 4 / 8
-        </Typography>
-      </Box>
-    </Box>
+    <Grid container direction="row" alignItems="center">
+      <Grid item xs={6}>
+        <IconButton aria-label="play or mute" onClick={switchIsDrawerOpen}>
+          <ViewListRoundedIcon color="primary" sx={{ fontSize: 30}}/>
+        </IconButton>
+      </Grid>
+
+      <Grid item xs={6}>
+        <Grid container direction="row" alignItems="center">
+          <Grid item xs={12}>
+            <Typography variant="body2" color="primary" align='right' sx={{ mr: 1}}>
+              Votes To Skip: 4 / 8
+            </Typography>
+          </Grid>
+        </Grid>
+      </Grid>
+    </Grid>
 
     <Card sx={{ boxShadow: "25", maxWidth: 450, minHeight: 450, borderRadius:3, background: customSyle.csBgGradient.lightBlue}}>
       <CardMedia

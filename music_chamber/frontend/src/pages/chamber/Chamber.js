@@ -1,4 +1,5 @@
-import {useEffect, useState} from 'react'
+import {useEffect, useState, Fragment} from 'react'
+import ChamberDrawer from '../../components/ChamberDrawer'
 import { useParams } from 'react-router-dom'
 import { useSession } from '../../hooks/useSession';
 import { Box } from '@mui/material'
@@ -40,6 +41,9 @@ export default function Chamber() {
   const [isChamberStartPlay, setIsChamberStartPlay] = useState(false);
 
   const [songInfo, setSongInfo] = useState({})
+
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedComponent, setSelectedComponent] = useState('player')
   
   const requestOption = (jsonData, requestType) =>{
     const optionData = {
@@ -88,6 +92,9 @@ export default function Chamber() {
   } 
   const toggleFavorite = () => { if (isFavorite) {setIsFavorite(false)} else {setIsFavorite(true)} }
   const toggleSkip = () => { if (isSkip) {setIsSkip(false)} else {setIsSkip(true)} }
+
+  const switchIsDrawerOpen = () => { if (isDrawerOpen) {setIsDrawerOpen(false)} else {setIsDrawerOpen(true)} }
+  const switchSelectedComponent = (seletion) => {setSelectedComponent(seletion)}
 
 
   const createPlaylist = async () => {
@@ -254,17 +261,39 @@ export default function Chamber() {
         <SpotifyPlayback token={accessToken} switchSdkPlaybackStatus={switchSdkPlaybackStatus}
                          switchSongHasChangedStatus={switchSongHasChangedStatus}/>
         <AddSong token={accessToken} openAddSong={openAddSong} switchOpenAddSong={switchOpenAddSong} updateSongIdsToBeAdded={updateSongIdsToBeAdded}/>
+        
+        <Fragment>
         {
-          openMusicPlayer && <Box sx={{
+          openMusicPlayer && (selectedComponent === 'player') && <Box sx={{
             display: 'flex', flexDirection: 'column', justifyContent: "center",
             alignItems: 'center', minHeight: '85vh',
             mx: '20px', mb:'50px', mt:'20px'
           }}>
             <MusicPlayer {...songInfo} isPlay={isPlay} togglePlay={togglePlay} 
                          isFavorite={isFavorite} toggleFavorite={toggleFavorite} isSkip={isSkip} toggleSkip={toggleSkip} 
-                         isChamberStartPlay={isChamberStartPlay}/>
+                         isChamberStartPlay={isChamberStartPlay} switchIsDrawerOpen={switchIsDrawerOpen}/>
           </Box>
         }
+
+
+        {/* // TODO: remove this part after all component ui are ready */}
+        {openMusicPlayer && (selectedComponent !== 'player') &&
+          <Box sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: "center",
+            alignItems: 'center',
+            minHeight: '85vh',
+            mx: '20px', mb:'50px', mt:'20px'
+          }}>
+            <MusicPlayer {...songInfo} isPlay={isPlay} togglePlay={togglePlay} 
+                         isFavorite={isFavorite} toggleFavorite={toggleFavorite} isSkip={isSkip} toggleSkip={toggleSkip} 
+                         isChamberStartPlay={isChamberStartPlay} switchIsDrawerOpen={switchIsDrawerOpen}/>
+          </Box>
+        }
+
+        <ChamberDrawer anchor='right' isDrawerOpen={isDrawerOpen} switchIsDrawerOpen={switchIsDrawerOpen} switchSelectedComponent={switchSelectedComponent}/>
+        </Fragment>
         
     </div>
   )
