@@ -17,7 +17,7 @@ from .serializers import CreatePlaylistSerializer, PlaylistAddItemSerializer, Re
 from .utils import create_or_update_user_token, is_user_authenticated, fetch_user_token_info,\
                    spotify_web_api_operator, get_user_devices, get_song_info_by_id, get_song_on_play, get_my_playlist,\
                    get_playlist_items, get_playback_state, get_my_profile, create_playlist, playlist_add_item,\
-                   resume_playlist, change_playback_volume, get_song_feature_by_id
+                   resume_playlist, change_playback_volume, get_song_feature_by_id, get_playlist_total
 from api.models import Chamber
 from common.utils import constant
 from common.utils.work_with_model import WorkWithModel
@@ -327,11 +327,34 @@ class GetMyPlaylist(APIView):
 
 
 class GetPlaylistItems(APIView):
-    url_search_kwarg = 'playlist_id'
+    url_search_kwarg_id = 'playlist_id'
+    url_search_kwarg_limit = 'limit'
+    url_search_kwarg_offset = 'offset'
 
     def get(self, request):
-        playlist_id = request.GET.get(self.url_search_kwarg)
-        playlist_items = get_playlist_items(user_session=self.request.session.session_key, playlist_id=playlist_id)
+        playlist_id = request.GET.get(self.url_search_kwarg_id)
+
+        playlist_limit = request.GET.get(self.url_search_kwarg_limit)
+        playlist_limit = 100 if playlist_limit is None or len(playlist_limit) == 0 else int(playlist_limit)
+
+        playlist_offset = request.GET.get(self.url_search_kwarg_offset)
+        playlist_offset = 0 if playlist_offset is None or len(playlist_offset) == 0 else int(playlist_offset)
+
+        playlist_items = get_playlist_items(user_session=self.request.session.session_key, playlist_id=playlist_id, 
+                                            playlist_limit=playlist_limit, playlist_offset=playlist_offset)
+
+        if 'Error' in playlist_items:
+            return Response({playlist_items['Error_Type']: playlist_items['Error']}, status=playlist_items['Status'])
+
+        return Response(playlist_items, status=status.HTTP_200_OK)
+
+
+class GetPlaylistAllItems(APIView):
+    url_search_kwarg_id = 'playlist_id'
+
+    def get(self, request):
+        playlist_id = request.GET.get(self.url_search_kwarg_id)
+        playlist_items = get_playlist_total(user_session=self.request.session.session_key, playlist_id=playlist_id)
 
         if 'Error' in playlist_items:
             return Response({playlist_items['Error_Type']: playlist_items['Error']}, status=playlist_items['Status'])
