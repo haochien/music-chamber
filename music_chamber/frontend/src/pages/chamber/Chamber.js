@@ -8,6 +8,7 @@ import SpotifyPlayback from '../../components/SpotifyPlayback'
 import AddSong from '../../components/AddSong'
 import MusicPlayer from '../../components/MusicPlayer'
 import Playlist from '../../components/Playlist'
+import MemberList from '../../components/MemberList'
 
 // styles
 import './Chamber.css'
@@ -305,9 +306,24 @@ export default function Chamber() {
         }
 
 
+        {(selectedComponent === 'members') &&
+          <Box sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: "center",
+            alignItems: 'center',
+            minHeight: '85vh',
+            mx: '20px', mb:'50px', mt:'20px'
+          }}>
+            <MemberList switchIsDrawerOpen={switchIsDrawerOpen}/>
+          </Box>
+        }
+
+
+
 
         {/* // TODO: remove this part after all component ui are ready */}
-        {openMusicPlayer && (selectedComponent !== 'player' && selectedComponent !== 'playlist') &&
+        {openMusicPlayer && (selectedComponent !== 'player' && selectedComponent !== 'playlist' && selectedComponent !== 'members') &&
           <Box sx={{
             display: 'flex',
             flexDirection: 'column',

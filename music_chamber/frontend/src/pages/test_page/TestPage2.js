@@ -77,7 +77,7 @@ const CustomizedListItem = ({ event, listItemId, labelId, expandId, nbSkip, nbUp
         }
       >
         <ListItemAvatar>
-          <Avatar alt="" src={event.song_image_url} sx={{ height: '2.5em', width: '2.5em', mr:2 }}/>
+          <Avatar alt="" variant="square" src={event.song_image_url} sx={{ height: '2.5em', width: '2.5em', mr:2 }}/>
         </ListItemAvatar>
         <ListItemText id={labelId} primary={event.song_name} secondary={event.song_singer} sx={{mr:6}}/>
 
@@ -204,7 +204,7 @@ export default function TestPage2({ switchIsDrawerOpen }) {
             }
             >
               <ListItemAvatar>
-                <Avatar alt="" src={event.song_image_url} sx={{ height: '2.5em', width: '2.5em', mr:2 }}/>
+                <Avatar alt="" variant="square" src={event.song_image_url} sx={{ height: '2.5em', width: '2.5em', mr:2 }}/>
               </ListItemAvatar>
               <ListItemText id={labelId} primary={event.song_name} secondary={event.song_singer} sx={{mr:6}}/>
             </ListItem>
@@ -246,7 +246,7 @@ export default function TestPage2({ switchIsDrawerOpen }) {
             }
             >
               <ListItemAvatar>
-                <Avatar alt="" src={event.song_image_url} sx={{ height: '2.5em', width: '2.5em', mr:2 }}/>
+                <Avatar variant="square" alt="" src={event.song_image_url} sx={{ height: '2.5em', width: '2.5em', mr:2 }}/>
               </ListItemAvatar>
               <ListItemText id={labelId} primary={event.song_name} secondary={event.song_singer} sx={{mr:6}}/>
             </ListItem>
@@ -263,7 +263,7 @@ export default function TestPage2({ switchIsDrawerOpen }) {
     </Typography>
     <Divider sx={{mt:1, mx:1}}/>
     <List sx={{
-      maxHeight: 600, overflow: 'auto',
+      maxHeight: 400, overflow: 'auto',
       scrollbarWidth: 'thin',
       '&::-webkit-scrollbar-button': {
         height: 12,

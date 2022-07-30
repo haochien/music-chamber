@@ -10,6 +10,7 @@ import CreateChamber from './pages/create_chamber/CreateChamber'
 import Chamber from './pages/chamber/Chamber'
 import TestPage from './pages/test_page/TestPage'
 import TestPage2 from './pages/test_page/TestPage2'
+import TestPage3 from './pages/test_page/TestPage3'
 import TestApp from './pages/test_page/TestApp'
 
 
@@ -27,6 +28,7 @@ function App() {
             <Route path="/chamber/:id" element={<Chamber />}/>
             <Route path="/test-page/" element={<TestPage />}/>
             <Route path="/test-page2/" element={<TestPage2 />}/>
+            <Route path="/test-page3/" element={<TestPage3 />}/>
             <Route path="/test-app/" element={<TestApp />}/>
           </Routes>
         </BrowserRouter>

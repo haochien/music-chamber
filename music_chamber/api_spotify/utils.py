@@ -271,7 +271,7 @@ def get_my_profile(user_session):
     if dict_error is None:
         user_image = response.get("images")[0].get("url") if len(response.get("images")) > 0 else ""
         user_profile = {"id": response.get("id"), "display_name": response.get("display_name"), "email": response.get("email"), 
-                        "country": response.get("country"), "href": response.get("href"), "images": user_image}
+                        "country": response.get("country"), "href": response.get("href"), "images": user_image, "product": response.get("product")}
 
     return user_profile if dict_error is None else dict_error
 

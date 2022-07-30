@@ -243,7 +243,7 @@ export default function Playlist({ switchIsDrawerOpen, songList, currentSongID }
     </Typography>
     <Divider sx={{mt:1, mx:1}}/>
     <List sx={{
-      maxHeight: 600, overflow: 'auto',
+      maxHeight: 400, overflow: 'auto',
       scrollbarWidth: 'thin',
       '&::-webkit-scrollbar-button': {
         height: 12,
