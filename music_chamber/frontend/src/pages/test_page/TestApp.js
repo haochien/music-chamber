@@ -1,10 +1,11 @@
 import {useEffect, useState, Fragment} from 'react'
 import ChamberDrawer from '../../components/ChamberDrawer'
 import { Box } from '@mui/material'
-import React from 'react'
+import AddSong from '../../components/AddSong'
 import TestPage from './TestPage'
 import TestPage2 from './TestPage2'
 import TestPage3 from './TestPage3'
+import TestPage4 from './TestPage4'
 
 export default function TestApp() {
 
@@ -28,8 +29,26 @@ export default function TestApp() {
   const switchIsDrawerOpen = () => {if (isDrawerOpen) {setIsDrawerOpen(false)} else {setIsDrawerOpen(true)}} 
   const switchSelectedComponent = (seletion) => {setSelectedComponent(seletion)}
 
+  const [openAddSong, setOpenAddSong] = useState(false);
+  const [songIdsToBeAdded, setSongIdsToBeAdded] = useState([]);
+  const switchOpenAddSong = (trueOrFalse) => {
+    setOpenAddSong(trueOrFalse)
+  };
+  const updateSongIdsToBeAdded = (arraySongId) => {
+    setSongIdsToBeAdded(arraySongId)
+  };
+  const accessToken = 'test'
+
+  useEffect(() => {
+    if (selectedComponent === "addSong") {
+      switchOpenAddSong(true)
+    }
+  }, [selectedComponent])
+
+
   return (
     <Fragment>
+    <TestPage4 token={accessToken} openAddSong={openAddSong} switchOpenAddSong={switchOpenAddSong}/>
     {(selectedComponent === 'player') &&
       <Box sx={{
         display: 'flex',
@@ -43,7 +62,7 @@ export default function TestApp() {
       </Box>
     }
 
-    {(selectedComponent === 'playlist') &&
+    {(selectedComponent === 'playlist' || selectedComponent === 'addSong' ) &&
       <Box sx={{
         display: 'flex',
         flexDirection: 'column',
@@ -70,7 +89,7 @@ export default function TestApp() {
     }
 
     {/* // TODO: remove this part after all component ui are ready */}
-    {(selectedComponent !== 'player' && selectedComponent !== 'playlist' && selectedComponent !== 'members') &&
+    {(selectedComponent === 'chatRoom') &&
       <Box sx={{
         display: 'flex',
         flexDirection: 'column',

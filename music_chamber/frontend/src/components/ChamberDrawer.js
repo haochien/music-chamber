@@ -48,6 +48,11 @@ export default function ChamberDrawer({ anchor, isDrawerOpen, switchIsDrawerOpen
   };
 
   const handleListItemClick = (event, indexLayer, indexItem, itemID) => {
+    if (indexLayer === 0 && indexItem === 2) {
+      // if the selected item is addSong, the selected item of drawer should display playlist
+      indexItem = 1
+    }
+    
     setSelectedLayer(indexLayer);
     setSelectedItem(indexItem);
     switchSelectedComponent(itemID)

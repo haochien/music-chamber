@@ -43,7 +43,7 @@ export default function Chamber() {
   const [isChamberStartPlay, setIsChamberStartPlay] = useState(false);
 
   const [songInfo, setSongInfo] = useState({})
-  const [playlistItems, setPlaylistItems] = useState({})
+  const [playlistItems, setPlaylistItems] = useState([])
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedComponent, setSelectedComponent] = useState('player')
@@ -242,12 +242,13 @@ export default function Chamber() {
     if (songIdsToBeAdded.length>0) {
       console.log('I am going to add the song')
       await addSong()
-      
-      //TODO: these two task can be async
-      await getSongIngoById(songIdsToBeAdded[0])
       await getPlaylistItems(playlistId)
 
-      setOpenMusicPlayer(true)
+      if (!openMusicPlayer) {
+        await getSongIngoById(songIdsToBeAdded[0])
+        setOpenMusicPlayer(true)
+      }
+      
     }
   }, [songIdsToBeAdded])
 
@@ -261,6 +262,12 @@ export default function Chamber() {
     }
   }, [songHasChanged])
 
+
+  useEffect(() => {
+    if (selectedComponent === "addSong") {
+      switchOpenAddSong(true)
+    }
+  }, [selectedComponent])
 
   //useEffect(() => console.log(userAuthStatus), [userAuthStatus]);
 
@@ -276,7 +283,9 @@ export default function Chamber() {
         <p>Are You Host: {objChamberInfo ? objChamberInfo.is_host.toString() : ''}</p> */}
         <SpotifyPlayback token={accessToken} switchSdkPlaybackStatus={switchSdkPlaybackStatus}
                          switchSongHasChangedStatus={switchSongHasChangedStatus}/>
-        <AddSong token={accessToken} openAddSong={openAddSong} switchOpenAddSong={switchOpenAddSong} updateSongIdsToBeAdded={updateSongIdsToBeAdded}/>
+
+        <AddSong token={accessToken} openAddSong={openAddSong} switchOpenAddSong={switchOpenAddSong} updateSongIdsToBeAdded={updateSongIdsToBeAdded} 
+                 songIdsToBeAdded={songIdsToBeAdded}  switchSelectedComponent={switchSelectedComponent}/>
         
         <Fragment>
         {
@@ -292,7 +301,7 @@ export default function Chamber() {
         }
 
 
-        {openMusicPlayer && (selectedComponent === 'playlist') &&
+        {openMusicPlayer && (selectedComponent === 'playlist' || selectedComponent === 'addSong') &&
           <Box sx={{
             display: 'flex',
             flexDirection: 'column',
@@ -320,10 +329,8 @@ export default function Chamber() {
         }
 
 
-
-
         {/* // TODO: remove this part after all component ui are ready */}
-        {openMusicPlayer && (selectedComponent !== 'player' && selectedComponent !== 'playlist' && selectedComponent !== 'members') &&
+        {openMusicPlayer && (selectedComponent === 'chatRoom') &&
           <Box sx={{
             display: 'flex',
             flexDirection: 'column',
