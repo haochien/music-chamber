@@ -20,7 +20,7 @@ import IconButton from '@mui/material/IconButton';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 
 
-export default function AddSong({ token, openAddSong, switchOpenAddSong, updateSongIdsToBeAdded}) {
+export default function AddSong({ token, openAddSong, switchOpenAddSong, updateSongIdsToBeAdded, songIdsToBeAdded, switchSelectedComponent}) {
     const [openSongSearchList, setOpenSongSearchList] = useState(false);
     const [queryResult, setQueryResult] = useState([])
     const [queryInput, setQueryInput] = useState([])
@@ -37,7 +37,24 @@ export default function AddSong({ token, openAddSong, switchOpenAddSong, updateS
 
     const handleClose = (event, reason) => {
       if (reason && reason == "backdropClick") 
+        // if length if songIdsToBeAdded > 0 (i.e. not the initial chamber creating stage, backdropClick of closing add song window is allowed)
+        if (songIdsToBeAdded.length > 0) {
+          setSongList([])
+          switchSelectedComponent('playlist')
+          switchOpenAddSong(false);
+        } else {
           return;
+        }
+      
+      if (reason && reason == "saved") {
+          setSongList([])
+          switchOpenAddSong(false);
+          // if length if songIdsToBeAdded > 0 (i.e. not the initial chamber creating stage, set seleted item of drawer to playlist after saving add song)
+          if (songIdsToBeAdded.length > 0) {
+            switchSelectedComponent('playlist')
+          }
+      }
+
       switchOpenAddSong(false);
     }
 
@@ -54,11 +71,11 @@ export default function AddSong({ token, openAddSong, switchOpenAddSong, updateS
       })
     }
 
-    const confirmAddSong = (event, reason) => {
+    const confirmAddSong = (event) => {
       if (songList.length > 0) {
          let arraySongId = songList.map(songObj => songObj.id)
          updateSongIdsToBeAdded(arraySongId)
-         handleClose(event, reason)
+         handleClose(event, 'saved')
       } else {
         setErr('Please add at least one song')
         switchMsgBar(true)
