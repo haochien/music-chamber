@@ -8,7 +8,8 @@ currently_playing = "me/player/currently-playing"
 song_info = "tracks/{id}"
 song_feature = "audio-features/{id}"
 my_playlist = "me/playlists"
-playlist_items = "playlists/{playlist_id}/tracks"
+playlist_items_add = "playlists/{playlist_id}/tracks"
+playlist_items_get = "playlists/{playlist_id}/tracks?limit={playlist_limit}&offset={playlist_offset}"
 create_playlist = "users/{user_id}/playlists"
 
 # Spotify Constant

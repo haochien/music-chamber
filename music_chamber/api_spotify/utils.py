@@ -121,6 +121,21 @@ def get_playback_state(user_session):
 
 
 
+def breakdown_playlist_items_dict(response):
+    item = response.get('item') if 'item' in response else response
+    song_id = item.get('id')
+    title = item.get('name') if 'name' in item else ""
+
+    artist_string = ""
+    for i, artist in enumerate(item.get('artists')):
+        artist_string  = artist_string + ", " + artist.get('name') if i > 0 else artist.get('name')
+
+    album_cover = item.get('album').get('images')[0].get('url')
+
+    return {'id': song_id, 'song_name': title, 'song_singer': artist_string, 'song_image_url': album_cover} 
+
+
+
 def breakdown_track_dict(response, only_id=False):
 
     item = response.get('item') if 'item' in response else response
@@ -215,14 +230,38 @@ def get_my_playlist(user_session):
     return {"playlist_info": list_playlist_info} if dict_error is None else dict_error
 
 
-def get_playlist_items(user_session, playlist_id):
-    response = spotify_web_api_operator(user_session=user_session, endpoint=constant.playlist_items.format(playlist_id=playlist_id))
+def get_playlist_items(user_session, playlist_id, playlist_limit, playlist_offset):
+    response = spotify_web_api_operator(user_session=user_session, endpoint=constant.playlist_items_get.format(playlist_id=playlist_id, playlist_limit=playlist_limit, 
+                                                                                                               playlist_offset=playlist_offset))
     dict_error = check_error_in_response(response, "items")
 
     if dict_error is None:
-        lst_item_details = [breakdown_track_dict(song_dict.get("track"), only_id=False) for song_dict in response.get("items")]
+        lst_item_details = [breakdown_playlist_items_dict(song_dict.get("track")) for song_dict in response.get("items")]
 
     return lst_item_details if dict_error is None else dict_error
+
+
+def get_playlist_total(user_session, playlist_id):
+    total_songs_in_playlist = 0
+    lst_playlist_items = []
+    playlist_offset = 0
+
+    while len(lst_playlist_items) == 0 or len(lst_playlist_items) < total_songs_in_playlist:
+        response = spotify_web_api_operator(user_session=user_session, endpoint=constant.playlist_items_get.format(playlist_id=playlist_id, playlist_limit=100, 
+                                                                                                                playlist_offset=playlist_offset))
+        dict_error = check_error_in_response(response, "items")
+
+        if dict_error is None:
+            lst_item_details = [breakdown_playlist_items_dict(song_dict.get("track")) for song_dict in response.get("items")]
+            lst_playlist_items += lst_item_details
+            playlist_offset += 100
+            if total_songs_in_playlist == 0:
+                total_songs_in_playlist = response.get("total")
+        else:
+            break
+
+    return lst_playlist_items if dict_error is None else dict_error
+
 
 
 def get_my_profile(user_session):
@@ -232,7 +271,7 @@ def get_my_profile(user_session):
     if dict_error is None:
         user_image = response.get("images")[0].get("url") if len(response.get("images")) > 0 else ""
         user_profile = {"id": response.get("id"), "display_name": response.get("display_name"), "email": response.get("email"), 
-                        "country": response.get("country"), "href": response.get("href"), "images": user_image}
+                        "country": response.get("country"), "href": response.get("href"), "images": user_image, "product": response.get("product")}
 
     return user_profile if dict_error is None else dict_error
 
@@ -253,7 +292,7 @@ def create_playlist(user_session, user_id, data):
 def playlist_add_item(user_session, playlist_id, data):
     #TODO: check whether the track id has been in the playlist. If yes, then don't add
     response = spotify_web_api_operator(user_session=user_session, 
-                                        endpoint=constant.playlist_items.format(playlist_id=playlist_id), post_data=data)  
+                                        endpoint=constant.playlist_items_add.format(playlist_id=playlist_id), post_data=data)  
     dict_error = check_error_in_response(response)
 
     if dict_error is None and "Success" in response:

@@ -7,6 +7,8 @@ import { Box } from '@mui/material'
 import SpotifyPlayback from '../../components/SpotifyPlayback'
 import AddSong from '../../components/AddSong'
 import MusicPlayer from '../../components/MusicPlayer'
+import Playlist from '../../components/Playlist'
+import MemberList from '../../components/MemberList'
 
 // styles
 import './Chamber.css'
@@ -41,6 +43,7 @@ export default function Chamber() {
   const [isChamberStartPlay, setIsChamberStartPlay] = useState(false);
 
   const [songInfo, setSongInfo] = useState({})
+  const [playlistItems, setPlaylistItems] = useState({})
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedComponent, setSelectedComponent] = useState('player')
@@ -133,6 +136,15 @@ export default function Chamber() {
     console.log("end get song info by id. song info: ", data)
 
     setSongInfo(data)
+  }
+
+  const getPlaylistItems = async (playlist_id) => {
+    console.log('start get playlist items. playlist id: ', playlist_id)
+    const res = await fetch('/api-spotify/get-playlist-items-all?playlist_id=' + playlist_id)
+    const data = await res.json()
+    console.log("end get playlist items. playlist items: ", data)
+
+    setPlaylistItems(data)
   }
 
 
@@ -230,7 +242,11 @@ export default function Chamber() {
     if (songIdsToBeAdded.length>0) {
       console.log('I am going to add the song')
       await addSong()
+      
+      //TODO: these two task can be async
       await getSongIngoById(songIdsToBeAdded[0])
+      await getPlaylistItems(playlistId)
+
       setOpenMusicPlayer(true)
     }
   }, [songIdsToBeAdded])
@@ -276,8 +292,38 @@ export default function Chamber() {
         }
 
 
+        {openMusicPlayer && (selectedComponent === 'playlist') &&
+          <Box sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: "center",
+            alignItems: 'center',
+            minHeight: '85vh',
+            mx: '20px', mb:'50px', mt:'20px'
+          }}>
+            <Playlist switchIsDrawerOpen={switchIsDrawerOpen} songList={playlistItems} currentSongID={songInfo.id}/>
+          </Box>
+        }
+
+
+        {(selectedComponent === 'members') &&
+          <Box sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: "center",
+            alignItems: 'center',
+            minHeight: '85vh',
+            mx: '20px', mb:'50px', mt:'20px'
+          }}>
+            <MemberList switchIsDrawerOpen={switchIsDrawerOpen}/>
+          </Box>
+        }
+
+
+
+
         {/* // TODO: remove this part after all component ui are ready */}
-        {openMusicPlayer && (selectedComponent !== 'player') &&
+        {openMusicPlayer && (selectedComponent !== 'player' && selectedComponent !== 'playlist' && selectedComponent !== 'members') &&
           <Box sx={{
             display: 'flex',
             flexDirection: 'column',

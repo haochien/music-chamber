@@ -3,6 +3,8 @@ import ChamberDrawer from '../../components/ChamberDrawer'
 import { Box } from '@mui/material'
 import React from 'react'
 import TestPage from './TestPage'
+import TestPage2 from './TestPage2'
+import TestPage3 from './TestPage3'
 
 export default function TestApp() {
 
@@ -41,8 +43,34 @@ export default function TestApp() {
       </Box>
     }
 
+    {(selectedComponent === 'playlist') &&
+      <Box sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: "center",
+        alignItems: 'center',
+        minHeight: '85vh',
+        mx: '20px', mb:'50px', mt:'20px'
+      }}>
+        <TestPage2 switchIsDrawerOpen={switchIsDrawerOpen}/>
+      </Box>
+    }
+
+    {(selectedComponent === 'members') &&
+      <Box sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: "center",
+        alignItems: 'center',
+        minHeight: '85vh',
+        mx: '20px', mb:'50px', mt:'20px'
+      }}>
+        <TestPage3 switchIsDrawerOpen={switchIsDrawerOpen}/>
+      </Box>
+    }
+
     {/* // TODO: remove this part after all component ui are ready */}
-    {(selectedComponent !== 'player') &&
+    {(selectedComponent !== 'player' && selectedComponent !== 'playlist' && selectedComponent !== 'members') &&
       <Box sx={{
         display: 'flex',
         flexDirection: 'column',
