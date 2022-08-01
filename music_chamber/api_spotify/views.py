@@ -14,13 +14,15 @@ from requests import Request, post, put
 
 from .serializers import CreatePlaylistSerializer, PlaylistAddItemSerializer, ResumePlaybackSerializer, \
                          ChangePlaybackVolumeSerializer
-from .utils import create_or_update_user_token, is_user_authenticated, fetch_user_token_info,\
+from .utils import create_or_update_user_data, is_user_authenticated, fetch_user_token_info,\
                    spotify_web_api_operator, get_user_devices, get_song_info_by_id, get_song_on_play, get_my_playlist,\
                    get_playlist_items, get_playback_state, get_my_profile, create_playlist, playlist_add_item,\
-                   resume_playlist, change_playback_volume, get_song_feature_by_id, get_playlist_total
+                   resume_playlist, change_playback_volume, get_song_feature_by_id, get_playlist_total, get_login_user_profile
 from api.models import Chamber
 from common.utils import constant
 from common.utils.work_with_model import WorkWithModel
+
+from django.contrib.auth import authenticate, login
 
 env = settings.ENV
 
@@ -72,12 +74,18 @@ def get_auth_callback(request):
         #TODO: render to error page
         raise Exception(f"Spotify User Login Failed. Details: {error}")
 
+    # get user profile
+    dict_user_profile = get_login_user_profile(access_token=access_token)
+    if 'Error' in response:
+        return Exception(f"get_login_user_profile failed. Details: {response}")
+    
+    user_data = {**response, **dict_user_profile}
+
     # store callback info with user session
-    if not request.session.exists(request.session.session_key):
-        request.session.create()
-    
-    create_or_update_user_token(request.session.session_key, refresh_token, access_token, expires_in, token_type)
-    
+    spotify_user = authenticate(request, user_data=user_data)
+    login(request, spotify_user, backend='api_spotify.auth.SpotifyAuthenticationBackend')
+
+    # redirect to app
     if 'chamber_id' in request.session:
         chamber_id = request.session['chamber_id']
         return redirect(f'/chamber/{chamber_id}')

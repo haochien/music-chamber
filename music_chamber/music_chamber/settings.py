@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 
 from pathlib import Path
 import os
+from telnetlib import AUTHENTICATION
 import environ
 
 ENV = environ.Env(
@@ -64,6 +65,11 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'music_chamber.urls'
+
+
+AUTHENTICATION_BACKENDS = ['django.contrib.auth.backends.ModelBackend', 'api_spotify.auth.SpotifyAuthenticationBackend']
+
+
 
 TEMPLATES = [
     {

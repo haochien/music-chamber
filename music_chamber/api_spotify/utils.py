@@ -12,23 +12,27 @@ from common.utils import constant
 env = settings.ENV
 BASE_URL = "https://api.spotify.com/v1/"
 
-def fetch_user_token_info(user_session, return_queryset=True):
-    queryset_user_token = SpotifyUserToken.objects.filter(user_session=user_session)
+def fetch_user_token_info(user_id, return_queryset=True):
+    queryset_user_token = SpotifyUserToken.objects.filter(spotify_id=user_id)
     if queryset_user_token.exists():
         return queryset_user_token if return_queryset else queryset_user_token[0]
     else:
         return None
 
 
-def create_or_update_user_token(user_session, refresh_token, access_token, expires_in, token_type):
-    queryset_user_token = fetch_user_token_info(user_session)
-    expire_time = timezone.now() + timedelta(seconds=expires_in)
+def create_or_update_user_data(**user_data):
+    id = user_data.get('id')
+    queryset_user = fetch_user_token_info(id)
+    expire_time = timezone.now() + timedelta(seconds=user_data.get('expires_in'))
 
-    list_model_fields = ['user_session', 'refresh_token', 'access_token', 'expires_in', 'token_type']
-    list_model_values = [user_session, refresh_token, access_token, expire_time, token_type]
+    list_model_fields = ['spotify_id', 'display_name', 'email', 'country', 'images', 'product',
+                         'refresh_token', 'access_token', 'expires_in', 'token_type']
+    list_model_values = [id, user_data.get('display_name'), user_data.get('email'), user_data.get('country'), 
+                         user_data.get('country'), user_data.get('product'), user_data.get('refresh_token'),
+                         user_data.get('access_token'), expire_time, user_data.get('token_type'),]
 
-    if queryset_user_token is not None:
-        WorkWithModel.create_or_update_model(SpotifyUserToken, list_model_fields, list_model_values, 'update', queryset_user_token)
+    if queryset_user is not None:
+        WorkWithModel.create_or_update_model(SpotifyUserToken, list_model_fields, list_model_values, 'update', queryset_user)
     else:
         WorkWithModel.create_or_update_model(SpotifyUserToken, list_model_fields, list_model_values, 'create')
 
@@ -48,7 +52,7 @@ def refresh_user_token(user_session):
     expires_in = response.get('expires_in')
     refresh_token = response.get('refresh_token') if response.get('refresh_token') is not None else refresh_token
 
-    create_or_update_user_token(user_session, refresh_token, access_token, expires_in, token_type)
+    create_or_update_user_data(user_session, refresh_token, access_token, expires_in, token_type)
 
 
 def is_user_authenticated(user_session):
@@ -106,6 +110,29 @@ def check_error_in_response(response, response_key_arg=None):
     
     return None
     
+
+
+def get_login_user_profile(access_token):
+
+    api_base = BASE_URL + constant.current_user
+    headers = {'Content-Type': 'application/json', 'Authorization': "Bearer " + access_token}
+
+    response = get(api_base, {}, headers=headers)
+    try:
+        response = response.json()
+    except Exception as ex:
+        response = {'Error': f'response not in proper json format. Detail: {ex}'}
+
+    dict_error = check_error_in_response(response)
+
+    if dict_error is None:
+        user_image = response.get("images")[0].get("url") if len(response.get("images")) > 0 else ""
+        user_profile = {"id": response.get("id"), "display_name": response.get("display_name"), "email": response.get("email"), 
+                        "country": response.get("country"), "href": response.get("href"), "images": user_image, "product": response.get("product")}
+
+    return user_profile if dict_error is None else dict_error
+
+
 
 
 def get_user_devices(user_session):
