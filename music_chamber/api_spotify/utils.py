@@ -12,30 +12,15 @@ from common.utils import constant
 env = settings.ENV
 BASE_URL = "https://api.spotify.com/v1/"
 
-def fetch_user_token_info(user_session, return_queryset=True):
-    queryset_user_token = SpotifyUserToken.objects.filter(user_session=user_session)
+def fetch_user_token_info(user_id, return_queryset=True):
+    queryset_user_token = SpotifyUserToken.objects.filter(spotify_id=user_id)
     if queryset_user_token.exists():
         return queryset_user_token if return_queryset else queryset_user_token[0]
     else:
         return None
 
 
-def create_or_update_user_token(user_session, refresh_token, access_token, expires_in, token_type):
-    queryset_user_token = fetch_user_token_info(user_session)
-    expire_time = timezone.now() + timedelta(seconds=expires_in)
-
-    list_model_fields = ['user_session', 'refresh_token', 'access_token', 'expires_in', 'token_type']
-    list_model_values = [user_session, refresh_token, access_token, expire_time, token_type]
-
-    if queryset_user_token is not None:
-        WorkWithModel.create_or_update_model(SpotifyUserToken, list_model_fields, list_model_values, 'update', queryset_user_token)
-    else:
-        WorkWithModel.create_or_update_model(SpotifyUserToken, list_model_fields, list_model_values, 'create')
-
-
-def refresh_user_token(user_session):
-    refresh_token = fetch_user_token_info(user_session, return_queryset=False).refresh_token
-
+def refresh_user_token(user_id, refresh_token):
     response = post('https://accounts.spotify.com/api/token', data={
         'grant_type': 'refresh_token',
         'refresh_token': refresh_token,
@@ -43,34 +28,37 @@ def refresh_user_token(user_session):
         'client_secret': env.str('SPOTIFY_CLIENT_SECRET')
     }).json()
 
-    access_token = response.get('access_token')
-    token_type = response.get('token_type')
-    expires_in = response.get('expires_in')
-    refresh_token = response.get('refresh_token') if response.get('refresh_token') is not None else refresh_token
+    queryset_user = SpotifyUserToken.objects.filter(spotify_id=user_id)
+    if queryset_user.exists():
+        expire_time = timezone.now() + timedelta(seconds=response.get('expires_in'))
+        refresh_token = response.get('refresh_token') if response.get('refresh_token') is not None else refresh_token
 
-    create_or_update_user_token(user_session, refresh_token, access_token, expires_in, token_type)
+        queryset_user.update(access_token=response.get('access_token'), refresh_token=refresh_token,
+                             token_type=response.get('token_type'), expires_in=expire_time)
 
 
-def is_user_authenticated(user_session):
-    instance_user_token = fetch_user_token_info(user_session, return_queryset=False)
+def is_user_authenticated(request):
+    #instance_user_token = fetch_user_token_info(user_session, return_queryset=False)
 
-    if instance_user_token is not None:
+    #if instance_user_token is not None:
+    if request.user.is_authenticated:
         # check whether user token needs to be refreshed
-        expire_in = instance_user_token.expires_in
+        expire_in = request.user.expires_in
+        refresh_token = request.user.refresh_token
+        user_id = request.user.spotify_id
         if expire_in <= timezone.now():
-            refresh_user_token(user_session)
+            refresh_user_token(user_id, refresh_token)
         
         return True
     return False
 
 
 
-def spotify_web_api_operator(user_session, endpoint, post_data=False, put_data=False):
+def spotify_web_api_operator(access_token, endpoint, post_data=False, put_data=False):
     api_base = BASE_URL + endpoint
-    instance_user_token = fetch_user_token_info(user_session, return_queryset=False)
-    if instance_user_token is not None:
+    if access_token is not None:
         headers = {'Content-Type': 'application/json', 
-                   'Authorization': "Bearer " + instance_user_token.access_token}
+                   'Authorization': "Bearer " + access_token}
     else:
         return {'Error': 'No access token found.'}
 
@@ -80,12 +68,14 @@ def spotify_web_api_operator(user_session, endpoint, post_data=False, put_data=F
             return {"Success": response.reason} if len(response.text) == 0 else {"Success": response.json()}
         else:
             return {"Error": response.json()}
+
     elif put_data != False:
         response = put(api_base, headers=headers, json=put_data)
         if response.ok:
             return {"Success": response.reason} if len(response.text) == 0 else {"Success": response.json()}
         else:
             return {"Error": response.json()}
+
     else:
         response = get(api_base, {}, headers=headers)
         try:
@@ -107,15 +97,42 @@ def check_error_in_response(response, response_key_arg=None):
     return None
     
 
+def get_login_user_profile(access_token):
 
-def get_user_devices(user_session):
-    response = spotify_web_api_operator(user_session=user_session, endpoint=constant.devices)
+    api_base = BASE_URL + constant.current_user
+    headers = {'Content-Type': 'application/json', 'Authorization': "Bearer " + access_token}
+
+    response = get(api_base, {}, headers=headers)
+    try:
+        response = response.json()
+    except Exception as ex:
+        response = {'Error': f'response not in proper json format. Detail: {ex}'}
+
+    dict_error = check_error_in_response(response)
+
+    if dict_error is None:
+        user_image = response.get("images")[0].get("url") if len(response.get("images")) > 0 else ""
+        user_profile = {"id": response.get("id"), "display_name": response.get("display_name"), "email": response.get("email"), 
+                        "country": response.get("country"), "href": response.get("href"), "images": user_image, "product": response.get("product")}
+
+    return user_profile if dict_error is None else dict_error
+
+
+def get_user_devices(access_token):
+    response = spotify_web_api_operator(access_token=access_token, endpoint=constant.devices)
     dict_error = check_error_in_response(response, 'devices')
     return response.get('devices') if dict_error is None else dict_error
 
 
-def get_playback_state(user_session):
-    response = spotify_web_api_operator(user_session=user_session, endpoint=constant.playback_state)
+def transfer_device(access_token, target_device_id):
+    data = {"device_ids": target_device_id, "play": False}
+    response = spotify_web_api_operator(access_token=access_token, endpoint=constant.playback_state, put_data=data)
+    dict_error = check_error_in_response(response)
+    return response if dict_error is None else dict_error
+
+
+def get_playback_state(access_token):
+    response = spotify_web_api_operator(access_token=access_token, endpoint=constant.playback_state)
     dict_error = check_error_in_response(response)
     return response if dict_error is None else dict_error
 
@@ -172,8 +189,8 @@ def breakdown_track_dict(response, only_id=False):
 
 
 
-def get_song_feature_by_id(user_session, song_id):
-    response = spotify_web_api_operator(user_session=user_session, endpoint=constant.song_feature.format(id=song_id))
+def get_song_feature_by_id(access_token, song_id):
+    response = spotify_web_api_operator(access_token=access_token, endpoint=constant.song_feature.format(id=song_id))
     dict_error = check_error_in_response(response)
     if dict_error is None:
         return response
@@ -182,12 +199,12 @@ def get_song_feature_by_id(user_session, song_id):
     return {}
 
 
-def get_song_on_play(user_session):
-    dict_song_info = spotify_web_api_operator(user_session=user_session, endpoint=constant.currently_playing)
+def get_song_on_play(access_token):
+    dict_song_info = spotify_web_api_operator(access_token=access_token, endpoint=constant.currently_playing)
     dict_error = check_error_in_response(dict_song_info, 'item')
 
     song_id = dict_song_info.get('item').get('id')
-    dict_song_feature = get_song_feature_by_id(user_session, song_id)
+    dict_song_feature = get_song_feature_by_id(access_token, song_id)
 
     if dict_error is not None:
         return dict_error
@@ -198,11 +215,11 @@ def get_song_on_play(user_session):
         return breakdown_track_dict(dict_song_info)
 
 
-def get_song_info_by_id(user_session, song_id):
-    dict_song_info = spotify_web_api_operator(user_session=user_session, endpoint=constant.song_info.format(id=song_id))
+def get_song_info_by_id(access_token, song_id):
+    dict_song_info = spotify_web_api_operator(access_token=access_token, endpoint=constant.song_info.format(id=song_id))
     dict_error = check_error_in_response(dict_song_info)
 
-    dict_song_feature = get_song_feature_by_id(user_session, song_id)
+    dict_song_feature = get_song_feature_by_id(access_token, song_id)
 
     if dict_error is not None:
         return dict_error
@@ -213,8 +230,8 @@ def get_song_info_by_id(user_session, song_id):
         return breakdown_track_dict(dict_song_info)
 
 
-def get_my_playlist(user_session):
-    response = spotify_web_api_operator(user_session=user_session, endpoint=constant.my_playlist)
+def get_my_playlist(access_token):
+    response = spotify_web_api_operator(access_token=access_token, endpoint=constant.my_playlist)
     dict_error = check_error_in_response(response)
 
     list_playlist_info = []
@@ -230,9 +247,10 @@ def get_my_playlist(user_session):
     return {"playlist_info": list_playlist_info} if dict_error is None else dict_error
 
 
-def get_playlist_items(user_session, playlist_id, playlist_limit, playlist_offset):
-    response = spotify_web_api_operator(user_session=user_session, endpoint=constant.playlist_items_get.format(playlist_id=playlist_id, playlist_limit=playlist_limit, 
-                                                                                                               playlist_offset=playlist_offset))
+def get_playlist_items(access_token, playlist_id, playlist_limit, playlist_offset):
+    response = spotify_web_api_operator(access_token=access_token, 
+                                        endpoint=constant.playlist_items_get.format(playlist_id=playlist_id, playlist_limit=playlist_limit, 
+                                                                                    playlist_offset=playlist_offset))
     dict_error = check_error_in_response(response, "items")
 
     if dict_error is None:
@@ -241,14 +259,15 @@ def get_playlist_items(user_session, playlist_id, playlist_limit, playlist_offse
     return lst_item_details if dict_error is None else dict_error
 
 
-def get_playlist_total(user_session, playlist_id):
+def get_playlist_total(access_token, playlist_id):
     total_songs_in_playlist = 0
     lst_playlist_items = []
     playlist_offset = 0
 
     while len(lst_playlist_items) == 0 or len(lst_playlist_items) < total_songs_in_playlist:
-        response = spotify_web_api_operator(user_session=user_session, endpoint=constant.playlist_items_get.format(playlist_id=playlist_id, playlist_limit=100, 
-                                                                                                                playlist_offset=playlist_offset))
+        response = spotify_web_api_operator(access_token=access_token, 
+                                            endpoint=constant.playlist_items_get.format(playlist_id=playlist_id, playlist_limit=100, 
+                                                                                        playlist_offset=playlist_offset))
         dict_error = check_error_in_response(response, "items")
 
         if dict_error is None:
@@ -264,8 +283,8 @@ def get_playlist_total(user_session, playlist_id):
 
 
 
-def get_my_profile(user_session):
-    response = spotify_web_api_operator(user_session=user_session, endpoint=constant.current_user)
+def get_my_profile(access_token):
+    response = spotify_web_api_operator(access_token=access_token, endpoint=constant.current_user)
     dict_error = check_error_in_response(response)
 
     if dict_error is None:
@@ -276,9 +295,9 @@ def get_my_profile(user_session):
     return user_profile if dict_error is None else dict_error
 
 
-def create_playlist(user_session, user_id, data):
+def create_playlist(access_token, user_id, data):
 
-    response = spotify_web_api_operator(user_session=user_session, 
+    response = spotify_web_api_operator(access_token=access_token, 
                                         endpoint=constant.create_playlist.format(user_id=user_id), post_data=data)  
     dict_error = check_error_in_response(response)
 
@@ -289,9 +308,9 @@ def create_playlist(user_session, user_id, data):
     return dict_error
 
 
-def playlist_add_item(user_session, playlist_id, data):
+def playlist_add_item(access_token, playlist_id, data):
     #TODO: check whether the track id has been in the playlist. If yes, then don't add
-    response = spotify_web_api_operator(user_session=user_session, 
+    response = spotify_web_api_operator(access_token=access_token, 
                                         endpoint=constant.playlist_items_add.format(playlist_id=playlist_id), post_data=data)  
     dict_error = check_error_in_response(response)
 
@@ -302,8 +321,8 @@ def playlist_add_item(user_session, playlist_id, data):
     return dict_error
 
 
-def resume_playlist(user_session, data):
-    response = spotify_web_api_operator(user_session=user_session, 
+def resume_playlist(access_token, data):
+    response = spotify_web_api_operator(access_token=access_token, 
                                         endpoint=constant.resume_playback, put_data=data)  
     dict_error = check_error_in_response(response)
 
@@ -314,8 +333,8 @@ def resume_playlist(user_session, data):
     return dict_error
 
 
-def change_playback_volume(user_session, volume_percent):
-    response = spotify_web_api_operator(user_session=user_session, 
+def change_playback_volume(access_token, volume_percent):
+    response = spotify_web_api_operator(access_token=access_token, 
                                         endpoint=constant.change_volume.format(volume_percent=volume_percent), put_data={})  
     dict_error = check_error_in_response(response)
 

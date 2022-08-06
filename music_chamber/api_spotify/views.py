@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from os import access
 import time
 
 from urllib import response
@@ -7,6 +8,8 @@ from django.conf import settings
 from django.utils import timezone
 
 from rest_framework.views import APIView
+from rest_framework.authentication import BasicAuthentication
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 
@@ -14,20 +17,22 @@ from requests import Request, post, put
 
 from .serializers import CreatePlaylistSerializer, PlaylistAddItemSerializer, ResumePlaybackSerializer, \
                          ChangePlaybackVolumeSerializer
-from .utils import create_or_update_user_token, is_user_authenticated, fetch_user_token_info,\
-                   spotify_web_api_operator, get_user_devices, get_song_info_by_id, get_song_on_play, get_my_playlist,\
+from .utils import is_user_authenticated, spotify_web_api_operator, get_user_devices,\
+                   transfer_device, get_song_info_by_id, get_song_on_play, get_my_playlist,\
                    get_playlist_items, get_playback_state, get_my_profile, create_playlist, playlist_add_item,\
-                   resume_playlist, change_playback_volume, get_song_feature_by_id, get_playlist_total
+                   resume_playlist, change_playback_volume, get_song_feature_by_id, get_playlist_total, get_login_user_profile
 from api.models import Chamber
 from common.utils import constant
 from common.utils.work_with_model import WorkWithModel
+
+from django.contrib.auth import authenticate, login
 
 env = settings.ENV
 
 
 class CheckUserAuth(APIView):
     def get(self, request):
-        is_authenticated = is_user_authenticated(self.request.session.session_key)
+        is_authenticated = is_user_authenticated(request)
         return Response({'is_auth': is_authenticated}, status=status.HTTP_200_OK)
 
 
@@ -72,12 +77,18 @@ def get_auth_callback(request):
         #TODO: render to error page
         raise Exception(f"Spotify User Login Failed. Details: {error}")
 
+    # get user profile
+    dict_user_profile = get_login_user_profile(access_token=access_token)
+    if 'Error' in response:
+        return Exception(f"get_login_user_profile failed. Details: {response}")
+    
+    user_data = {**response, **dict_user_profile}
+
     # store callback info with user session
-    if not request.session.exists(request.session.session_key):
-        request.session.create()
-    
-    create_or_update_user_token(request.session.session_key, refresh_token, access_token, expires_in, token_type)
-    
+    spotify_user = authenticate(request, user_data=user_data)
+    login(request, spotify_user, backend='api_spotify.auth.SpotifyAuthenticationBackend')
+
+    # redirect to app
     if 'chamber_id' in request.session:
         chamber_id = request.session['chamber_id']
         return redirect(f'/chamber/{chamber_id}')
@@ -86,18 +97,21 @@ def get_auth_callback(request):
 
 
 class GetUserToken(APIView):
-    def get(self, request):
-        instance_access_token = fetch_user_token_info(request.session.session_key, return_queryset=False)
+    permission_classes = [IsAuthenticated]
 
-        if instance_access_token is not None:
-            return Response({"access_token": instance_access_token.access_token}, status=status.HTTP_200_OK)
+    def get(self, request):
+        user_token = request.user.access_token
+        if user_token is not None:
+            return Response({"access_token": user_token}, status=status.HTTP_200_OK)
         else:
             return Response({'Bad Request': "Access token for current session is not created yet"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class GetDevices(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
-        response = get_user_devices(user_session=self.request.session.session_key)
+        response = get_user_devices(access_token=request.user.access_token)
         if 'Error' in response:
             return Response({response['Error_Type']: response['Error']}, status=response['Status'])
 
@@ -105,9 +119,11 @@ class GetDevices(APIView):
 
 
 class TransferDevice(APIView):
-    def put(self, response):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request):
         time.sleep(5)
-        response = get_user_devices(user_session=self.request.session.session_key)
+        response = get_user_devices(access_token=request.user.access_token)
         if 'Error' in response:
             return Response({response['Error_Type']: response['Error']}, status=response['Status'])
 
@@ -115,18 +131,18 @@ class TransferDevice(APIView):
         if len(target_device_id) == 0:
             return Response({"Not Found": "Cannot find spotify device of Music Chamber"}, status=status.HTTP_404_NOT_FOUND)
 
-        data = {"device_ids": target_device_id, "play": False}
-        response = spotify_web_api_operator(user_session=self.request.session.session_key, 
-                                            endpoint=constant.playback_state, put_data=data)
-        if 'Success' in response:
-            return Response({"Success": f"Successfully connect to Music Chamber device {target_device_id}"}, status=status.HTTP_204_NO_CONTENT)
+        response = transfer_device(access_token=request.user.access_token, target_device_id=target_device_id)
+        if 'Error' in response:
+            return Response({response['Error_Type']: response['Error']}, status=response['Status'])
         
-        return Response({"Error": f"Device Transfer failed. Error: {response['Error']}"}, status=status.HTTP_406_NOT_ACCEPTABLE)
+        return Response({"Success": f"Successfully connect to Music Chamber device - {target_device_id}"}, status=status.HTTP_204_NO_CONTENT)
 
 
 class GetPlaybackState(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
-        playback_state = get_playback_state(user_session=self.request.session.session_key)
+        playback_state = get_playback_state(access_token=request.user.access_token)
 
         if 'Error' in playback_state:
             return Response({playback_state['Error_Type']: playback_state['Error']}, status=playback_state['Status'])
@@ -186,12 +202,13 @@ class GetPlaybackState(APIView):
 #         return playlist_on_play, song_on_play, song_progress
 
 class ResumePlayback(APIView):
+    permission_classes = [IsAuthenticated]
     serializer_class = ResumePlaybackSerializer
 
     def put(self, request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            host_name = ""
+            host_spotify_id = ""
             chamber_id = self.request.session['chamber_id']
             chamber_queryset = Chamber.objects.filter(chamber_id=chamber_id)
             
@@ -200,7 +217,7 @@ class ResumePlayback(APIView):
             elif chamber_queryset.exists():
                 chamber_instance = chamber_queryset[0]
                 playlist_on_play = chamber_instance.playlist_on_play
-                host_name = chamber_instance.host_name
+                host_spotify_id = chamber_instance.host_spotify_id_id
             else:
                 return Response({"Error": "Cannot find user's chamber id"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -212,13 +229,13 @@ class ResumePlayback(APIView):
             song_progress = serializer.data.get('position_ms')
             data = {"context_uri": playlist_uri, "offset": offset, "position_ms":song_progress}
 
-            response = resume_playlist(user_session=self.request.session.session_key, data=data)
+            response = resume_playlist(access_token=request.user.access_token, data=data)
 
             if 'Error' in response:
                 return Response({response['Error_Type']: response['Error']}, status=response['Status'])
             else:
                 # host changes is_play in model Chamber to True if song starts to be played 
-                if host_name != "" and host_name == self.request.session.session_key and not chamber_instance.is_playing:
+                if host_spotify_id != "" and host_spotify_id == request.user.spotify_id and not chamber_instance.is_playing:
                     try:
                         self._update_is_playing_status(chamber_queryset, is_playing=True)
                     except Exception as ex:
@@ -234,6 +251,8 @@ class ResumePlayback(APIView):
 
 
 class GetSongOnPlay(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
         chamber_id = self.request.session['chamber_id']
         chamber_queryset = Chamber.objects.filter(chamber_id=chamber_id)
@@ -242,13 +261,13 @@ class GetSongOnPlay(APIView):
         else:
             return Response({"Error": "Cannot find user's chamber id"}, status=status.HTTP_404_NOT_FOUND)
 
-        host_name = chamber_instance.host_name
-        dict_song_info = get_song_on_play(user_session=self.request.session.session_key)
+        host_spotify_id = chamber_instance.host_spotify_id_id
+        dict_song_info = get_song_on_play(access_token=request.user.access_token)
 
         if 'Error' in dict_song_info:
             return Response({dict_song_info['Error_Type']: dict_song_info['Error']}, status=dict_song_info['Status'])
         
-        if host_name != "" and host_name == self.request.session.session_key:
+        if host_spotify_id != "" and host_spotify_id == request.user.spotify_id:
             try:
                 self._store_current_song_info(chamber_queryset, dict_song_info['id'])
             except Exception as ex:
@@ -298,24 +317,25 @@ class GetSongOnPlay(APIView):
 
 
 class GetSongInfo(APIView):
+    permission_classes = [IsAuthenticated]
     url_search_kwarg = 'song_id'
 
     def get(self, request):
-        user_session=self.request.session.session_key
+        access_token=request.user.access_token
         song_id = request.GET.get(self.url_search_kwarg)
-        song_info = get_song_info_by_id(user_session=user_session, song_id=song_id)
+        song_info = get_song_info_by_id(access_token=access_token, song_id=song_id)
 
         if 'Error' in song_info:
             return Response({song_info['Error_Type']: song_info['Error']}, status=song_info['Status'])
-        
-        song_feature = get_song_feature_by_id(user_session=user_session, song_id=song_id)
 
         return Response(song_info, status=status.HTTP_200_OK)
 
 
 class GetMyPlaylist(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
-        playlist_info = get_my_playlist(user_session=self.request.session.session_key)
+        playlist_info = get_my_playlist(access_token=request.user.access_token)
 
         if 'Error' in playlist_info:
             return Response({playlist_info['Error_Type']: playlist_info['Error']}, status=playlist_info['Status'])
@@ -327,6 +347,7 @@ class GetMyPlaylist(APIView):
 
 
 class GetPlaylistItems(APIView):
+    permission_classes = [IsAuthenticated]
     url_search_kwarg_id = 'playlist_id'
     url_search_kwarg_limit = 'limit'
     url_search_kwarg_offset = 'offset'
@@ -340,7 +361,7 @@ class GetPlaylistItems(APIView):
         playlist_offset = request.GET.get(self.url_search_kwarg_offset)
         playlist_offset = 0 if playlist_offset is None or len(playlist_offset) == 0 else int(playlist_offset)
 
-        playlist_items = get_playlist_items(user_session=self.request.session.session_key, playlist_id=playlist_id, 
+        playlist_items = get_playlist_items(access_token=request.user.access_token, playlist_id=playlist_id, 
                                             playlist_limit=playlist_limit, playlist_offset=playlist_offset)
 
         if 'Error' in playlist_items:
@@ -350,11 +371,12 @@ class GetPlaylistItems(APIView):
 
 
 class GetPlaylistAllItems(APIView):
+    permission_classes = [IsAuthenticated]
     url_search_kwarg_id = 'playlist_id'
 
     def get(self, request):
         playlist_id = request.GET.get(self.url_search_kwarg_id)
-        playlist_items = get_playlist_total(user_session=self.request.session.session_key, playlist_id=playlist_id)
+        playlist_items = get_playlist_total(access_token=request.user.access_token, playlist_id=playlist_id)
 
         if 'Error' in playlist_items:
             return Response({playlist_items['Error_Type']: playlist_items['Error']}, status=playlist_items['Status'])
@@ -363,8 +385,10 @@ class GetPlaylistAllItems(APIView):
 
 
 class GetMyProfile(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
-        user_profile = get_my_profile(user_session=self.request.session.session_key)
+        user_profile = get_my_profile(access_token=request.user.access_token)
 
         if 'Error' in user_profile:
             return Response({user_profile['Error_Type']: user_profile['Error']}, status=user_profile['Status'])
@@ -373,21 +397,23 @@ class GetMyProfile(APIView):
 
 
 class CreatePlaylist(APIView):
+    permission_classes = [IsAuthenticated]
     serializer_class = CreatePlaylistSerializer
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            host_name = ""
+            host_spotify_id = ""
             chamber_id = self.request.session['chamber_id']
             chamber_queryset = Chamber.objects.filter(chamber_id=chamber_id)
         
             if len(serializer.data.get('name')) > 0:
                 playlist_name = serializer.data.get('name')
             elif chamber_queryset.exists():
+                # if Name is not given, use chamber name as song list name
                 chamber_instance = chamber_queryset[0]
                 playlist_name = chamber_instance.chamber_name
-                host_name = chamber_instance.host_name
+                host_spotify_id = chamber_instance.host_spotify_id_id
             else:
                 return Response({"Error": "Cannot find user's chamber id"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -396,20 +422,14 @@ class CreatePlaylist(APIView):
             else:
                 playlist_description = f"Playlist created by Music Chamber for the chamber '{playlist_name}'"
 
-            user_profile = get_my_profile(user_session=self.request.session.session_key)
-            if 'Error' in user_profile:
-                return Response({user_profile['Error_Type']: user_profile['Error']}, status=user_profile['Status'])
-            else:
-                user_id = user_profile.get("id")
-
             data = {'name': playlist_name, 'public': False, 'collaborative': True, 'description': playlist_description}
-            response = create_playlist(user_session=self.request.session.session_key, user_id=user_id, data=data)
+            response = create_playlist(access_token=request.user.access_token, user_id=request.user.spotify_id, data=data)
 
             if 'Error' in response:
                 return Response({response['Error_Type']: response['Error']}, status=response['Status'])
             else:
                 # host persist created list info in model Chamber
-                if host_name != "" and host_name == self.request.session.session_key:
+                if host_spotify_id != "" and host_spotify_id == request.user.spotify_id:
                     try:
                         self._store_playlist_info(chamber_queryset, response["id"])
                     except Exception as ex:
@@ -425,6 +445,7 @@ class CreatePlaylist(APIView):
 
 
 class PlaylistAddItem(APIView):
+    permission_classes = [IsAuthenticated]
     serializer_class = PlaylistAddItemSerializer
 
     def post(self, request):
@@ -433,7 +454,7 @@ class PlaylistAddItem(APIView):
             playlist_id = serializer.data.get('playlist_id')
             track_uris = [constant.uri_track + uris.strip() for uris in serializer.data.get('track_id').split(",")]
 
-            response = playlist_add_item(user_session=self.request.session.session_key, playlist_id=playlist_id, data={"uris": track_uris})
+            response = playlist_add_item(access_token=request.user.access_token, playlist_id=playlist_id, data={"uris": track_uris})
 
             if 'Error' in response:
                 return Response({response['Error_Type']: response['Error']}, status=response['Status'])
@@ -444,12 +465,13 @@ class PlaylistAddItem(APIView):
 
 
 class ChangePlaybackVolume(APIView): 
+    permission_classes = [IsAuthenticated]
     serializer_class = ChangePlaybackVolumeSerializer
 
     def put(self, request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            response = change_playback_volume(user_session=self.request.session.session_key, 
+            response = change_playback_volume(access_token=request.user.access_token, 
                                               volume_percent= serializer.data.get('volume_percent'))     
             if 'Error' in response:
                 return Response({response['Error_Type']: response['Error']}, status=response['Status'])

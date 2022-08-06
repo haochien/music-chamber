@@ -2,11 +2,12 @@ from django.db import models
 from django.contrib.auth.models import User
 import uuid
 
+from api_spotify.models import SpotifyUserToken
+
 class Chamber(models.Model):
-    #TODO: create FK to User or Profile model 
     chamber_id = models.UUIDField(default=uuid.uuid4, unique=True, primary_key=True, editable=False)
     chamber_name = models.CharField(max_length=50)
-    host_name = models.CharField(max_length=50, unique=True)
+    host_spotify_id = models.ForeignKey(SpotifyUserToken, on_delete=models.DO_NOTHING, to_field="spotify_id", db_column="host_spotify_id")
     access_guest_can_pause = models.BooleanField(default=True)
     votes_song_skip = models.IntegerField(default=1)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -23,4 +24,12 @@ class Chamber(models.Model):
         return str(self.chamber_name)
 
 
-#class ChamberCurrentSong(models.Model):
+class ChamberMembers(models.Model):
+    #TODO: if host is not in chmaber, his/her is_host should be set to False and reasign other as host?
+    chamber_id = models.ForeignKey(Chamber, on_delete=models.CASCADE, db_column="chamber_id")
+    spotify_id = models.ForeignKey(SpotifyUserToken,on_delete=models.CASCADE, to_field="spotify_id", db_column="spotify_id")
+    is_in_chamber = models.BooleanField(default=True)
+
+    def __str__(self):
+        return str(self.chamber_id)
+    
