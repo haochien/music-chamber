@@ -7,7 +7,7 @@ class SpotifyUserToken(models.Model):
     objects = SpotifyUserLoginManager()
 
     id = models.AutoField(primary_key=True)
-    spotify_id = models.CharField(max_length=300, null=True, blank=True)
+    spotify_id = models.CharField(max_length=300, unique=True, null=True, blank=True)
     display_name = models.CharField(max_length=200, null=True, blank=True)
     email = models.CharField(max_length=500, null=True, blank=True)
     country = models.CharField(max_length=50, null=True, blank=True)
