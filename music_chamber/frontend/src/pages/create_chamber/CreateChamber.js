@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
 import { Avatar, Button, TextField, FormControl,
   FormGroup, FormLabel, FormControlLabel, Switch,
   Grid, Box, Typography, Container } from '@mui/material'
@@ -46,6 +46,24 @@ export default function CreateChamber() {
       .then((data) => navigate('/chamber/' + data.chamber_id))
 
   };
+
+
+  const loginSpotify = async () => {
+    const res_check_user_auth = await fetch("/api-spotify/check-user-auth")
+    const data_check_user_auth = await res_check_user_auth.json()
+
+    if (!data_check_user_auth.is_auth) {
+      const res_get_auth_url = await fetch("/api-spotify/get-auth-url")
+      const data_get_auth_url = await res_get_auth_url.json()
+      window.location.replace(data_get_auth_url.auth_url)
+    }
+  }
+
+
+	useEffect(async () => {
+    loginSpotify()
+	}, [])
+
 
   return(
     <Container component="main" maxWidth="xs">

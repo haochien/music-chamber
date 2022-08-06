@@ -202,6 +202,7 @@ export default function Chamber() {
       const res_get_access_token = await fetch("/api-spotify/get-access-token")
       const data_get_access_token = await res_get_access_token.json()
       setAccessToken(data_get_access_token.access_token)
+      console.log('access_token: ', data_get_access_token.access_token)
     }
   }
 

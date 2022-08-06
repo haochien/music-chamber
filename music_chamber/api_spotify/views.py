@@ -127,7 +127,7 @@ class TransferDevice(APIView):
         if 'Error' in response:
             return Response({response['Error_Type']: response['Error']}, status=response['Status'])
 
-        target_device_id = [dict_device['id'] for dict_device in response if dict_device['name']=='DESKTOP-181617V']
+        target_device_id = [dict_device['id'] for dict_device in response if dict_device['name']=='Music-Chamber']
         if len(target_device_id) == 0:
             return Response({"Not Found": "Cannot find spotify device of Music Chamber"}, status=status.HTTP_404_NOT_FOUND)
 
