@@ -199,12 +199,12 @@ def get_song_feature_by_id(access_token, song_id):
     return {}
 
 
-def get_song_on_play(user_session):
-    dict_song_info = spotify_web_api_operator(user_session=user_session, endpoint=constant.currently_playing)
+def get_song_on_play(access_token):
+    dict_song_info = spotify_web_api_operator(access_token=access_token, endpoint=constant.currently_playing)
     dict_error = check_error_in_response(dict_song_info, 'item')
 
     song_id = dict_song_info.get('item').get('id')
-    dict_song_feature = get_song_feature_by_id(user_session, song_id)
+    dict_song_feature = get_song_feature_by_id(access_token, song_id)
 
     if dict_error is not None:
         return dict_error
@@ -295,9 +295,9 @@ def get_my_profile(access_token):
     return user_profile if dict_error is None else dict_error
 
 
-def create_playlist(user_session, user_id, data):
+def create_playlist(access_token, user_id, data):
 
-    response = spotify_web_api_operator(user_session=user_session, 
+    response = spotify_web_api_operator(access_token=access_token, 
                                         endpoint=constant.create_playlist.format(user_id=user_id), post_data=data)  
     dict_error = check_error_in_response(response)
 
@@ -321,8 +321,8 @@ def playlist_add_item(access_token, playlist_id, data):
     return dict_error
 
 
-def resume_playlist(user_session, data):
-    response = spotify_web_api_operator(user_session=user_session, 
+def resume_playlist(access_token, data):
+    response = spotify_web_api_operator(access_token=access_token, 
                                         endpoint=constant.resume_playback, put_data=data)  
     dict_error = check_error_in_response(response)
 

@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from os import access
 import time
 
 from urllib import response
@@ -201,12 +202,13 @@ class GetPlaybackState(APIView):
 #         return playlist_on_play, song_on_play, song_progress
 
 class ResumePlayback(APIView):
+    permission_classes = [IsAuthenticated]
     serializer_class = ResumePlaybackSerializer
 
     def put(self, request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            host_name = ""
+            host_spotify_id = ""
             chamber_id = self.request.session['chamber_id']
             chamber_queryset = Chamber.objects.filter(chamber_id=chamber_id)
             
@@ -215,7 +217,7 @@ class ResumePlayback(APIView):
             elif chamber_queryset.exists():
                 chamber_instance = chamber_queryset[0]
                 playlist_on_play = chamber_instance.playlist_on_play
-                host_name = chamber_instance.host_name
+                host_spotify_id = chamber_instance.host_spotify_id_id
             else:
                 return Response({"Error": "Cannot find user's chamber id"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -227,13 +229,13 @@ class ResumePlayback(APIView):
             song_progress = serializer.data.get('position_ms')
             data = {"context_uri": playlist_uri, "offset": offset, "position_ms":song_progress}
 
-            response = resume_playlist(user_session=self.request.session.session_key, data=data)
+            response = resume_playlist(access_token=request.user.access_token, data=data)
 
             if 'Error' in response:
                 return Response({response['Error_Type']: response['Error']}, status=response['Status'])
             else:
                 # host changes is_play in model Chamber to True if song starts to be played 
-                if host_name != "" and host_name == self.request.session.session_key and not chamber_instance.is_playing:
+                if host_spotify_id != "" and host_spotify_id == request.user.spotify_id and not chamber_instance.is_playing:
                     try:
                         self._update_is_playing_status(chamber_queryset, is_playing=True)
                     except Exception as ex:
@@ -249,6 +251,8 @@ class ResumePlayback(APIView):
 
 
 class GetSongOnPlay(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
         chamber_id = self.request.session['chamber_id']
         chamber_queryset = Chamber.objects.filter(chamber_id=chamber_id)
@@ -257,13 +261,13 @@ class GetSongOnPlay(APIView):
         else:
             return Response({"Error": "Cannot find user's chamber id"}, status=status.HTTP_404_NOT_FOUND)
 
-        host_name = chamber_instance.host_name
-        dict_song_info = get_song_on_play(user_session=self.request.session.session_key)
+        host_spotify_id = chamber_instance.host_spotify_id_id
+        dict_song_info = get_song_on_play(access_token=request.user.access_token)
 
         if 'Error' in dict_song_info:
             return Response({dict_song_info['Error_Type']: dict_song_info['Error']}, status=dict_song_info['Status'])
         
-        if host_name != "" and host_name == self.request.session.session_key:
+        if host_spotify_id != "" and host_spotify_id == request.user.spotify_id:
             try:
                 self._store_current_song_info(chamber_queryset, dict_song_info['id'])
             except Exception as ex:
@@ -393,21 +397,23 @@ class GetMyProfile(APIView):
 
 
 class CreatePlaylist(APIView):
+    permission_classes = [IsAuthenticated]
     serializer_class = CreatePlaylistSerializer
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
-            host_name = ""
+            host_spotify_id = ""
             chamber_id = self.request.session['chamber_id']
             chamber_queryset = Chamber.objects.filter(chamber_id=chamber_id)
         
             if len(serializer.data.get('name')) > 0:
                 playlist_name = serializer.data.get('name')
             elif chamber_queryset.exists():
+                # if Name is not given, use chamber name as song list name
                 chamber_instance = chamber_queryset[0]
                 playlist_name = chamber_instance.chamber_name
-                host_name = chamber_instance.host_name
+                host_spotify_id = chamber_instance.host_spotify_id_id
             else:
                 return Response({"Error": "Cannot find user's chamber id"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -416,20 +422,14 @@ class CreatePlaylist(APIView):
             else:
                 playlist_description = f"Playlist created by Music Chamber for the chamber '{playlist_name}'"
 
-            user_profile = get_my_profile(user_session=self.request.session.session_key)
-            if 'Error' in user_profile:
-                return Response({user_profile['Error_Type']: user_profile['Error']}, status=user_profile['Status'])
-            else:
-                user_id = user_profile.get("id")
-
             data = {'name': playlist_name, 'public': False, 'collaborative': True, 'description': playlist_description}
-            response = create_playlist(user_session=self.request.session.session_key, user_id=user_id, data=data)
+            response = create_playlist(access_token=request.user.access_token, user_id=request.user.spotify_id, data=data)
 
             if 'Error' in response:
                 return Response({response['Error_Type']: response['Error']}, status=response['Status'])
             else:
                 # host persist created list info in model Chamber
-                if host_name != "" and host_name == self.request.session.session_key:
+                if host_spotify_id != "" and host_spotify_id == request.user.spotify_id:
                     try:
                         self._store_playlist_info(chamber_queryset, response["id"])
                     except Exception as ex:
