@@ -10,9 +10,13 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
+import CircularProgress from '@mui/material/CircularProgress';
+
+import { authUser } from '../middlewares/auth';
+
 
 export default function LoginBox({ openLogin, switchOpenLogin, isBackDropAllowed }) {
-  // const [open, setOpen] = useState(true);
+  const [showCircular, setShowCircular] = useState(false)
 
   const handleClose = (event, reason) => {
     if (reason && reason === "backdropClick") {
@@ -21,8 +25,13 @@ export default function LoginBox({ openLogin, switchOpenLogin, isBackDropAllowed
       switchOpenLogin(false);
     }
 
-    
   };
+
+  const handleLogin = async () => {
+    await authUser()
+    //TODO: make error handler here in case authUser failed 
+    setShowCircular(true)
+  }
 
 
   return (
@@ -39,23 +48,30 @@ export default function LoginBox({ openLogin, switchOpenLogin, isBackDropAllowed
             To listen music with others and use more functions in Music Chamber, you must have Spotify Premium account.  
           </DialogContentText>
         
-        <Box sx={{display: 'flex', justifyContent: {xs: "center", md: "left"} }}>
+        { !showCircular && <Box sx={{display: 'flex', justifyContent: {xs: "center", md: "left"} }}>
           <Button 
             variant="contained"
             color="primary" 
-            onClick={() => {console.log('to login!')}}
+            onClick={() => {handleLogin()}}
             sx={{ borderWidth:1, textTransform: 'none', mt:4, mb: 3, px:3 , borderRadius:5}}
           >
             <Box
               component="img"
               sx={{ width: 20, maxWidth: 20, mr:2, my:1}}
-              alt="Sleeping Owl"
+              alt="Spotify Icon"
               src={img_spotify_icon}
             />
 
             Continue with Spotify
           </Button>
         </Box>
+        }
+        
+
+        { showCircular && <Box sx={{ display: 'flex', justifyContent: 'center', my:5}}>
+          <CircularProgress />
+        </Box>
+        }
 
         </DialogContent>
 

@@ -16,19 +16,20 @@ import HeadphonesIcon from '@mui/icons-material/Headphones';
 import { fontSize } from '@mui/system';
 
 import LoginBox from './LoginBox'
+import { checkIsAuth } from '../middlewares/auth';
 
 const settings = ['My Profile', 'Connection', 'Logout'];
 const pages = [{id: 'creatChamber', name: 'Creat Chamber', url: '/create-chamber'}, 
                {id: 'explore', name: 'Explore', url: '/'}, 
                {id: 'about', name: 'About', url: '/'}];
 const appName = 'Music Chamber'
-const is_auth = false
 
 
 export default function Navbar() {
     const [anchorElNav, setAnchorElNav] = useState(null);
     const [anchorElUser, setAnchorElUser] = useState(null);
     const [openLogin, setOpenLogin] = useState(false);
+    const [isAuth, setIsAuth] = useState(false)
 
     const navigate = useNavigate()
   
@@ -48,6 +49,12 @@ export default function Navbar() {
     };
 
     const switchOpenLogin = (trueOrFalse) => {setOpenLogin(trueOrFalse)};
+
+
+    useEffect(async () => {
+      const isUserAuth = await checkIsAuth()
+      setIsAuth(isUserAuth)
+    }, [isAuth])
   
     return (
       <Box>
@@ -153,13 +160,13 @@ export default function Navbar() {
 
 
             <Box sx={{ flexGrow: 0 }}>
-              { is_auth &&
+              { isAuth &&
                 <IconButton onClick={handleOpenUserMenu} sx={{ p: {xs: 1, md: 2} }}>
                   <Avatar variant="square" alt="Hirst Letter" src="..." sx={{ height: {xs: '1.2em', md:'1.3em'}, width: {xs: '1.2em', md:'1.3em'}, borderRadius:1.5 }}/>
                 </IconButton>
               }
 
-              { !is_auth &&
+              { !isAuth &&
                 <Box>
                 <Button 
                   variant="outlined" 
