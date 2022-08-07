@@ -1,4 +1,5 @@
 import {useEffect, useState} from 'react';
+import * as customSyle from '../../constants/cssStyle';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import ListItemText from '@mui/material/ListItemText';
@@ -30,7 +31,7 @@ export default function TestPage4({ token, openAddSong, switchOpenAddSong}) {
     <div>
 
     <Dialog open={openAddSong} onClose={handleClose} scroll='paper' fullWidth={true} disableEscapeKeyDown={true}>
-      <Box sx={{background: 'linear-gradient(to right top, #86a8e7, #97b4ec, #a7c0f0, #b7ccf5, #c7d8f9, #c7d8f9, #c7d8f9, #c7d8f9, #b7ccf5, #a7c0f0, #97b4ec, #86a8e7)'}}>
+      <Box sx={{background: customSyle.csBgGradient.lightBlue}}>
       <DialogTitle>Add Songs to Playlist</DialogTitle>
       <DialogContent>
         <DialogContentText>

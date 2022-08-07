@@ -1,4 +1,5 @@
 import {useEffect, useState} from 'react';
+import * as customSyle from '../constants/cssStyle';
 import { useSongSearch } from '../hooks/useSongSearch';
 import MsgBar from './MsgBar';
 import Button from '@mui/material/Button';
@@ -36,7 +37,7 @@ export default function AddSong({ token, openAddSong, switchOpenAddSong, updateS
     };
 
     const handleClose = (event, reason) => {
-      if (reason && reason == "backdropClick") 
+      if (reason && reason === "backdropClick") 
         // if length if songIdsToBeAdded > 0 (i.e. not the initial chamber creating stage, backdropClick of closing add song window is allowed)
         if (songIdsToBeAdded.length > 0) {
           setSongList([])
@@ -96,7 +97,7 @@ export default function AddSong({ token, openAddSong, switchOpenAddSong, updateS
       <div>
 
         <Dialog open={openAddSong} onClose={handleClose} scroll='paper' fullWidth={true} disableEscapeKeyDown={true}>
-          <Box sx={{background: 'linear-gradient(to right top, #86a8e7, #97b4ec, #a7c0f0, #b7ccf5, #c7d8f9, #c7d8f9, #c7d8f9, #c7d8f9, #b7ccf5, #a7c0f0, #97b4ec, #86a8e7)'}}>
+          <Box sx={{background: customSyle.csBgGradient.lightBlue}}>
           <DialogTitle>Add Songs to Playlist</DialogTitle>
           <DialogContent>
             <DialogContentText>
