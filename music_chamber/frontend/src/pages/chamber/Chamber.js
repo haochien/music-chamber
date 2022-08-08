@@ -1,14 +1,16 @@
 import {useEffect, useState, Fragment} from 'react'
 import ChamberDrawer from '../../components/ChamberDrawer'
 import { useParams } from 'react-router-dom'
-import { useSession } from '../../hooks/useSession';
 import { Box } from '@mui/material'
 
+import { useSession } from '../../hooks/useSession';
 import SpotifyPlayback from '../../components/SpotifyPlayback'
 import AddSong from '../../components/AddSong'
 import MusicPlayer from '../../components/MusicPlayer'
 import Playlist from '../../components/Playlist'
 import MemberList from '../../components/MemberList'
+import LoginBox from '../../components/LoginBox'
+import { checkIsAuth, getSpotifyAccessToken } from '../../middlewares/auth';
 
 // styles
 import './Chamber.css'
@@ -25,9 +27,6 @@ export default function Chamber() {
   const { id } = useParams()
 	const [url, setUrl] = useState('/api/get-chamber?id=' + id)
 	const [objChamberInfo, setObjChamberInfo] = useState('')
-
-  const [userAuthStatus, setUserAuthStatus] = useState(false)
-  const [accessToken, setAccessToken] = useState('')
 
   const [playlistId, setPlaylistId] = useState('')
   const [isSdkPlaybackOn, setIsSdkPlaybackOn] = useState(false)
@@ -47,6 +46,10 @@ export default function Chamber() {
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedComponent, setSelectedComponent] = useState('player')
+
+  const [openLogin, setOpenLogin] = useState(false);
+  const [isAuth, setIsAuth] = useState(false)
+  const [accessToken, setAccessToken] = useState('')
   
   const requestOption = (jsonData, requestType) =>{
     const optionData = {
@@ -79,6 +82,7 @@ export default function Chamber() {
     setSongIdsToBeAdded(arraySongId)
   };
 
+  const switchOpenLogin = (trueOrFalse) => {setOpenLogin(trueOrFalse)};
 
   const togglePlay = () => {
     if (isChamberStartPlay) {
@@ -188,32 +192,27 @@ export default function Chamber() {
   }
 
 
-
-  const loginSpotify = async () => {
-    const res_check_user_auth = await fetch("/api-spotify/check-user-auth")
-    const data_check_user_auth = await res_check_user_auth.json()
-    setUserAuthStatus(data_check_user_auth.is_auth)
-
-    if (!data_check_user_auth.is_auth) {
-      const res_get_auth_url = await fetch("/api-spotify/get-auth-url")
-      const data_get_auth_url = await res_get_auth_url.json()
-      window.location.replace(data_get_auth_url.auth_url)
-    } else {
-      const res_get_access_token = await fetch("/api-spotify/get-access-token")
-      const data_get_access_token = await res_get_access_token.json()
-      setAccessToken(data_get_access_token.access_token)
-      console.log('access_token: ', data_get_access_token.access_token)
-    }
-  }
-
-
-	useEffect(async () => {
-    // get chamber info and login spotify
+  useEffect(async () => {
+    // get chamber info
 		const res_get_chamber = await fetch(url)
     const data_get_chamber = await res_get_chamber.json()
     setObjChamberInfo(data_get_chamber)
-    loginSpotify()
 	}, [])
+
+
+  useEffect(async () => {
+    // login spotify
+    const isUserAuth = await checkIsAuth()
+    setIsAuth(isUserAuth)
+    if (!isUserAuth) {
+      setOpenLogin(true)
+    } else {
+      const spotifyAccessToken = await getSpotifyAccessToken()
+      setAccessToken(spotifyAccessToken)
+      console.log('access_token: ', spotifyAccessToken)
+    }
+
+  }, [isAuth])
 
 
   useEffect(() => {
@@ -282,8 +281,11 @@ export default function Chamber() {
         <p>Chamber Created at: {objChamberInfo ? objChamberInfo.created_at : ''}</p>
         <p>Is Public Chamber: {objChamberInfo ? objChamberInfo.is_public.toString() : ''}</p>
         <p>Are You Host: {objChamberInfo ? objChamberInfo.is_host.toString() : ''}</p> */}
+
+        <LoginBox openLogin={openLogin} switchOpenLogin={switchOpenLogin} isBackDropAllowed={false} />
+
         <SpotifyPlayback token={accessToken} switchSdkPlaybackStatus={switchSdkPlaybackStatus}
-                         switchSongHasChangedStatus={switchSongHasChangedStatus}/>
+          switchSongHasChangedStatus={switchSongHasChangedStatus}/>
 
         <AddSong token={accessToken} openAddSong={openAddSong} switchOpenAddSong={switchOpenAddSong} updateSongIdsToBeAdded={updateSongIdsToBeAdded} 
                  songIdsToBeAdded={songIdsToBeAdded}  switchSelectedComponent={switchSelectedComponent}/>

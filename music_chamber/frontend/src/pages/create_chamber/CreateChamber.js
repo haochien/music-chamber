@@ -2,20 +2,26 @@ import {useState, useEffect} from 'react';
 import { Avatar, Button, TextField, FormControl,
   FormGroup, FormLabel, FormControlLabel, Switch,
   Grid, Box, Typography, Container } from '@mui/material'
-import * as customSyle from '../../constants/cssStyle';
 import MusicNote from '@mui/icons-material/MusicNote';
 import { useNavigate } from 'react-router-dom';
-import { useSession } from '../../hooks/useSession';
 
+import { useSession } from '../../hooks/useSession';
+import LoginBox from '../../components/LoginBox'
+import { checkIsAuth } from '../../middlewares/auth';
+import * as customSyle from '../../constants/cssStyle';
 
 
 export default function CreateChamber() {
   const [accessGuestCanPause, setAccessGuestCanPause] = useState(false);
   const [accessGuestCanAdd, setAccessGuestCanAdd] = useState(false);
   const [isPublic, setIsPublic] = useState(true);
+  const [openLogin, setOpenLogin] = useState(false);
+  const [isAuth, setIsAuth] = useState(false)
 
   const navigate = useNavigate()
   const csrftoken = useSession('csrftoken')
+
+  const switchOpenLogin = (trueOrFalse) => {setOpenLogin(trueOrFalse)};
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -48,24 +54,21 @@ export default function CreateChamber() {
   };
 
 
-  const loginSpotify = async () => {
-    const res_check_user_auth = await fetch("/api-spotify/check-user-auth")
-    const data_check_user_auth = await res_check_user_auth.json()
-
-    if (!data_check_user_auth.is_auth) {
-      const res_get_auth_url = await fetch("/api-spotify/get-auth-url")
-      const data_get_auth_url = await res_get_auth_url.json()
-      window.location.replace(data_get_auth_url.auth_url)
+  useEffect(async () => {
+    const isUserAuth = await checkIsAuth()
+    setIsAuth(isUserAuth)
+    if (!isUserAuth) {
+      setOpenLogin(true)
     }
-  }
 
-
-	useEffect(async () => {
-    loginSpotify()
-	}, [])
+  }, [isAuth])
 
 
   return(
+    <Box>
+
+    <LoginBox openLogin={openLogin} switchOpenLogin={switchOpenLogin} isBackDropAllowed={false} />
+
     <Container component="main" maxWidth="xs">
       <Box
         sx={{
@@ -184,8 +187,9 @@ export default function CreateChamber() {
 
         </Box>
       </Box>
-
     </Container>
+
+    </Box>
   )
 }
 
