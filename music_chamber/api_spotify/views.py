@@ -12,6 +12,7 @@ from rest_framework.authentication import BasicAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from django.http import HttpResponseRedirect
 
 from requests import Request, post, put
 
@@ -25,7 +26,7 @@ from api.models import Chamber
 from common.utils import constant
 from common.utils.work_with_model import WorkWithModel
 
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 
 env = settings.ENV
 
@@ -89,11 +90,21 @@ def get_auth_callback(request):
     login(request, spotify_user, backend='api_spotify.auth.SpotifyAuthenticationBackend')
 
     # redirect to app
+    #TODO: change logic here so that redirect to previous page
     if 'chamber_id' in request.session:
         chamber_id = request.session['chamber_id']
         return redirect(f'/chamber/{chamber_id}')
     else:
         return redirect('/')
+
+
+class LogoutSpotify(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        #next = request.META.get('HTTP_REFERER', '/')
+        logout(request)
+        return Response({"Success": "user has been logged out"}, status=status.HTTP_200_OK)
 
 
 class GetUserToken(APIView):
