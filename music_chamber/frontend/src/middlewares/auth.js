@@ -1,3 +1,4 @@
+
 export const checkIsAuth = async () => {
   const res_check_user_auth = await fetch("/api-spotify/check-user-auth")
   const data_check_user_auth = await res_check_user_auth.json()
@@ -15,3 +16,22 @@ export const getSpotifyAccessToken = async () => {
   const data_get_access_token = await res_get_access_token.json()
   return data_get_access_token.access_token
 }
+
+export const logoutSpotify = async (csrftoken) => {
+  // const requestOption = {
+  //   method: "POST",
+  //   headers: {
+  //     'Content-Type': 'application/json',
+  //     'X-CSRFToken': csrftoken,
+  //   },
+  // };
+  // const res_logout = await fetch("/api-spotify/logout-spotify", requestOption)
+
+  const res_logout = await fetch("/api-spotify/logout-spotify")
+  const data_logout = await res_logout.json()
+  console.log("Logout info: ", data_logout)
+
+  
+}
+
+
