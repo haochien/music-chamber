@@ -8,6 +8,7 @@ import Navbar from './components/Navbar'
 import Home from './pages/home/Home'
 import CreateChamber from './pages/create_chamber/CreateChamber'
 import Chamber from './pages/chamber/Chamber'
+import ExploreChamber from './pages/explore_chamber/ExploreChamber'
 import TestPage from './pages/test_page/TestPage'
 import TestPage2 from './pages/test_page/TestPage2'
 import TestPage3 from './pages/test_page/TestPage3'
@@ -26,6 +27,7 @@ function App() {
             <Route path="/" element={<Home />}/>
             <Route path="/create-chamber" element={<CreateChamber />}/>
             <Route path="/chamber/:id" element={<Chamber />}/>
+            <Route path="/explore-chamber" element={<ExploreChamber />}/>
             <Route path="/test-page/" element={<TestPage />}/>
             <Route path="/test-page2/" element={<TestPage2 />}/>
             <Route path="/test-page3/" element={<TestPage3 />}/>
