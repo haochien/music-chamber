@@ -22,7 +22,7 @@ import { useSession } from '../hooks/useSession';
 const settings = [{id: 'profile', name: 'My Profile'}, {id: 'conection', name: 'Connection'}, 
                   {id: 'logout', name: 'Logout'}];
 const pages = [{id: 'creatChamber', name: 'Creat Chamber', url: '/create-chamber'}, 
-               {id: 'explore', name: 'Explore', url: '/'}, 
+               {id: 'explore', name: 'Explore', url: '/explore-chamber'}, 
                {id: 'about', name: 'About', url: '/'}];
 const appName = 'Music Chamber'
 
