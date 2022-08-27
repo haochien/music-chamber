@@ -19,8 +19,8 @@ import LoginBox from './LoginBox'
 import { checkIsAuth, logoutSpotify } from '../middlewares/auth';
 import { useSession } from '../hooks/useSession';
 
-const settings = [{id: 'profile', name: 'My Profile'}, {id: 'conection', name: 'Connection'}, 
-                  {id: 'logout', name: 'Logout'}];
+const settings = [{id: 'profile', name: 'My Profile', url:'/profile'}, {id: 'conection', name: 'Connection', url:'/profile'}, 
+                  {id: 'logout', name: 'Logout', url:'/'}];
 const pages = [{id: 'creatChamber', name: 'Creat Chamber', url: '/create-chamber'}, 
                {id: 'explore', name: 'Explore', url: '/explore-chamber'}, 
                {id: 'about', name: 'About', url: '/'}];
@@ -53,9 +53,9 @@ export default function Navbar() {
 
     const switchOpenLogin = (trueOrFalse) => {setOpenLogin(trueOrFalse)};
 
-    const handleSettingMenuClick = async (event, selection) => {
+    const handleSettingMenuClick = async (event, selection, url) => {
       if (selection === 'logout') {
-        setAnchorElUser(null);
+        handleCloseUserMenu()
         await logoutSpotify(csrftoken)
         setIsAuth(false)
         window.location.reload();
@@ -63,16 +63,21 @@ export default function Navbar() {
 
       if (selection === 'profile') {
         console.log('Go to My Profile')
+        handleCloseUserMenu()
+        navigate(url)
       }
 
       if (selection === 'conection') {
         console.log('Go to Connection')
+        handleCloseUserMenu()
+        navigate(url)
       }
     }
 
 
     useEffect(async () => {
       const isUserAuth = await checkIsAuth()
+      // const isUserAuth = true
       setIsAuth(isUserAuth)
     }, [isAuth])
   
@@ -221,7 +226,7 @@ export default function Navbar() {
                 onClose={handleCloseUserMenu}
               >
                 {settings.map((setting) => (
-                  <MenuItem key={setting.id} onClick={(event) => handleSettingMenuClick(event, setting.id)}>
+                  <MenuItem key={setting.id} onClick={(event) => handleSettingMenuClick(event, setting.id, setting.url)}>
                     <Typography textAlign="center" color="black">{setting.name}</Typography>
                   </MenuItem>
                 ))}
