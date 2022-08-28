@@ -52,7 +52,16 @@ const createChamberList = () => {
   return myListItem
 }
 const chamberList = createChamberList()
-//const chamberList = [{chamber_id: 'test1', chamber_name: 'name1', host_name: 'host1', chamber_desc: 'this is the chamber 1', song_on_play: 'song1', main_language: 'language1', guest_nb: 4, guest_nb_max: 10, song_image_url:'https://i.scdn.co/image/ab67616d0000b273ba02e4c2026b51da26aa58bb'}];
+// const chamberList = [{chamber_id: 'test1', chamber_name: 'Work & Music', host_name: 'host1', 
+//                       chamber_desc: 'Feel bored or stress when work by your own? Join my chanel to listen music and work together.', 
+//                       song_on_play: 'song1', main_language: 'English', guest_nb: 15, guest_nb_max: 25, 
+//                       song_image_url:'https://i.scdn.co/image/ab67616d0000b2735095b7a6c4b5d9b982e559f3',
+//                       playlist_catagory:['Jazz', 'Blues', 'Funk'], is_public: true}];
+// const chamberList = [{chamber_id: 'test1', chamber_name: 'Study with Me', host_name: 'host1', 
+//                       chamber_desc: 'Cannot study without music. If you are also preparing the exam and need some music to chill, join me!', 
+//                       song_on_play: 'song1', main_language: 'English', guest_nb: 15, guest_nb_max: 25, 
+//                       song_image_url:'https://i.scdn.co/image/ab67616d0000b273ba02e4c2026b51da26aa58bb',
+//                       playlist_catagory:['R&B', 'Country'], is_public: false}];
 
 
 export default function ExploreChamber() {
